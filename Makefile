@@ -1,3 +1,5 @@
+pre-build: copy-bower-components
+	grunt
 
 copy-bower-components: bower_components/lawncipher bower_components/libsodium.js bower_components/pouchdb
 	cp bower_components/lawncipher/lawncipher.js www/js/
@@ -38,8 +40,14 @@ platforms/ios: plugins/done
 platforms/android: plugins/done
 	cordova platform add android@5.1.1
 
-ios: platforms/ios copy-bower-components
+ios: platforms/ios pre-build
 	cordova -d build ios
 
-android: platforms/android copy-bower-components
+android: platforms/android pre-build
 	cordova -d build android
+
+run-ios: platforms/ios pre-build
+	cordova -d run ios
+
+run-android: platforms/android pre-build
+	cordova -d run android
