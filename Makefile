@@ -33,10 +33,10 @@ update-plugins:
 	make plugins/done
 
 platforms/ios: plugins/done
-	cordova platform add ios
+	cordova platform add ios@4.1.1
 
 platforms/android: plugins/done
-	cordova platform add android
+	cordova platform add android@5.1.1
 
 ios: platforms/ios copy-bower-components
 	cordova -d build ios
