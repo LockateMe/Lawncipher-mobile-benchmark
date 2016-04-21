@@ -4,6 +4,4 @@ node_modules/
 bower_components/
 .DS_Store
 
-www/js/lawncipher.js
-www/js/sodium.js
-www/js/pouchdb.js
+www/js/
