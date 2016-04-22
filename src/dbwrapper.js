@@ -1,5 +1,5 @@
-function DBWrapper(dbNameS, /*setupFn,*/ getFn, findFn, findOneFn, saveFn, bulkSaveFn, updateFn, removeFn, /*saveBlobFn, bulkSaveBlobFn,*/ clearAllFn, rawDbObj){
-	if (typeof dbNameS != 'string') throw new TypeError('dbNameS must be a string');
+function DBWrapper(dbType, /*setupFn,*/ getFn, findFn, findOneFn, saveFn, bulkSaveFn, updateFn, removeFn, /*saveBlobFn, bulkSaveBlobFn,*/ clearAllFn, rawDbObj){
+	if (typeof dbTypeS != 'string') throw new TypeError('dbTypeS must be a string');
 	//if (typeof setupFn != 'function') throw new TypeError('setupFn must be a function');
 	if (typeof getFn != 'function') throw new TypeError('getFn must be a function');
 	if (typeof findFn != 'function') throw new TypeError('findFn must be a function');
@@ -14,7 +14,7 @@ function DBWrapper(dbNameS, /*setupFn,*/ getFn, findFn, findOneFn, saveFn, bulkS
 	if (typeof rawDbObj != 'object') throw new TypeError('rawDbObj must be an object');
 
 	// One Db wrapper will be instanciated for every DB that we benchmark
-	this.dbName = dbNameS;
+	this.dbType = dbTypeS;
 	//this.setup = setupFn;
 
 	/**
