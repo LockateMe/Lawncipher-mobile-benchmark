@@ -17,6 +17,7 @@ module.exports = function(grunt){
 				},
 				src: [
 					'src/dbwrapper.js',
+					'src/dbWrappers/lawncipher_wrapper.js',
 					'src/workload.js',
 					'src/workloads.js',
 					'src/workloadRunner.js',
