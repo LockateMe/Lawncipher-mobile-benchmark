@@ -1,17 +1,14 @@
 function Workload(dbWrappers, generateFunction, runnerFunction, name){
-	if (!(Array.isArray(dbWrappers) && dbWrappers.length > 0)) throw new TypeError('dbWrappers must be an array');
-	dbWrappers.forEach(function(item, index){
-		if (!(item instanceof DBWrapper)) throw new TypeError('dbWrappers[' + index + '] must be an instance of DBWrapper');
-	});
+	checkDBWrapperArray(dbWrappers);
 
 	if (typeof generateFunction != 'function') throw new TypeError('generateFunction must be a function');
 	if (typeof runnerFunction != 'function') throw new TypeError('runnerFunction must be a function');
 	if (typeof name != 'string') throw new TypeError('name must be a string');
 
 	/**
-	* DBWrapper instances
-	* generateFunction(Function cb)
-	* runnerFunction(Function cb)
+	* Array<DBWrapper> dbWrappers
+	* generateFunction(Array<DBWrapper> dbWrappers, Function cb)
+	* runnerFunction(Array<DBWrapper> dbWrappers, Function cb)
 	* String workloadName
 	*/
 
@@ -19,5 +16,33 @@ function Workload(dbWrappers, generateFunction, runnerFunction, name){
 	this._generateFunction = generateFunction;
 	this._runnerFunction = runnerFunction;
 	this._name = name;
+
+	this.run = function(callback){
+		if (typeof callback != 'function') throw new TypeError('callback must be a function');
+
+
+
+		var runIndex = 0;
+		var results = {};
+
+		function runOnce(){
+			runnerFunction(dbWrappers, function(err){
+				if (err){
+					callback(err);
+					return;
+				}
+
+				runNext();
+			});
+		}
+
+		function runNext(){
+			runIndex++;
+
+			if (runIndex == dbWrappers){
+				
+			}
+		}
+	}
 
 }
