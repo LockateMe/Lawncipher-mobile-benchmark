@@ -128,79 +128,79 @@
 					};*/
 
 					function saveFn(c, forceTypeTests){
-						return function(doc, attachement, cb){
+						return function(doc, attachment, cb){
 							if (forceTypeTests){
-								if (!(doc || attachement)) throw new TypeError('either doc or attachement must be defined');
+								if (!(doc || attachment)) throw new TypeError('either doc or attachment must be defined');
 								if (doc && typeof doc != 'object') throw new TypeError('when defined, doc must be an object');
-								if (attachement && !(attachement instanceof Uint8Array || typeof attachement == 'object' || typeof attachement == 'string')) throw new TypeError('when defined, attachement must either be a Uint8Array, an object or a string');
+								if (attachment && !(attachment instanceof Uint8Array || typeof attachment == 'object' || typeof attachment == 'string')) throw new TypeError('when defined, attachment must either be a Uint8Array, an object or a string');
 								if (typeof cb != 'function') throw new TypeError('cb must be a function');
 							}
 
-							c.save(attachement, doc, cb);
+							c.save(attachment, doc, cb);
 						}
 					}
 
-					/*var saveFn = function(doc, attachement, cb){
+					/*var saveFn = function(doc, attachment, cb){
 						if (forceTypeTests){
-							if (!(doc || attachement)) throw new TypeError('either doc or attachement must be defined');
+							if (!(doc || attachment)) throw new TypeError('either doc or attachment must be defined');
 							if (doc && typeof doc != 'object') throw new TypeError('when defined, doc must be an object');
-							if (attachement && !(attachement instanceof Uint8Array || typeof attachement == 'object' || typeof attachement == 'string')) throw new TypeError('when defined, attachement must either be a Uint8Array, an object or a string');
+							if (attachment && !(attachment instanceof Uint8Array || typeof attachment == 'object' || typeof attachment == 'string')) throw new TypeError('when defined, attachment must either be a Uint8Array, an object or a string');
 							if (typeof cb != 'function') throw new TypeError('cb must be a function');
 						}
 
-						c.save(attachement, doc, cb);
+						c.save(attachment, doc, cb);
 					};*/
 
 					function bulkSaveFn(c, forceTypeTests){
-						return function(docs, attachements, cb){
+						return function(docs, attachments, cb){
 							if (forceTypeTests){
-								if (!(docs || attachements)) throw new TypeError('either docs or attachements must be defined');
+								if (!(docs || attachments)) throw new TypeError('either docs or attachments must be defined');
 								if (docs && !(Array.isArray(docs) && docs.length > 0)) throw new TypeError('when defined, docs must be a non-empty array');
-								if (attachements && !(Array.isArray(attachements) && attachements.length > 0)) throw new TypeError('when defined, attachements must be a non-empty array');
-								if (docs && attachements && !(docs.length == attachements.length)) throw new TypeError('when both docs attachements are provided, they must have the same length');
+								if (attachments && !(Array.isArray(attachments) && attachments.length > 0)) throw new TypeError('when defined, attachments must be a non-empty array');
+								if (docs && attachments && !(docs.length == attachments.length)) throw new TypeError('when both docs attachments are provided, they must have the same length');
 								if (typeof cb != 'function') throw new TypeError('cb must be a function');
 							}
 
-							c.bulkSave(attachements, docs, cb);
+							c.bulkSave(attachments, docs, cb);
 						}
 					}
 
-					/*var bulkSaveFn = function(docs, attachements, cb){
+					/*var bulkSaveFn = function(docs, attachments, cb){
 						if (forceTypeTests){
-							if (!(docs || attachements)) throw new TypeError('either docs or attachements must be defined');
+							if (!(docs || attachments)) throw new TypeError('either docs or attachments must be defined');
 							if (docs && !(Array.isArray(docs) && docs.length > 0)) throw new TypeError('when defined, docs must be a non-empty array');
-							if (attachements && !(Array.isArray(attachements) && attachements.length > 0)) throw new TypeError('when defined, attachements must be a non-empty array');
-							if (docs && attachements && !(docs.length == attachements.length)) throw new TypeError('when both docs attachements are provided, they must have the same length');
+							if (attachments && !(Array.isArray(attachments) && attachments.length > 0)) throw new TypeError('when defined, attachments must be a non-empty array');
+							if (docs && attachments && !(docs.length == attachments.length)) throw new TypeError('when both docs attachments are provided, they must have the same length');
 							if (typeof cb != 'function') throw new TypeError('cb must be a function');
 						}
 
-						c.bulkSave(attachements, docs, cb);
+						c.bulkSave(attachments, docs, cb);
 					};*/
 
 					function updateFn(c, forceTypeTests){
-						return function(query, newAttributes, newAttachement, cb){
+						return function(query, newAttributes, newAttachment, cb){
 							if (forceTypeTests){
 								if (!(typeof query == 'string' || typeof query == 'object')) throw new TypeError('query must be either a string or an object');
-								if (!(newAttributes || newAttachement)) throw new TypeError('either newAttributes or newAttachement must be defined');
+								if (!(newAttributes || newAttachment)) throw new TypeError('either newAttributes or newAttachment must be defined');
 								if (newAttributes && typeof newAttributes != 'object') throw new TypeError('when defined, newAttributes must be an object');
-								if (newAttachement && !((newAttachement instanceof Uint8Array) || typeof newAttachement == 'object' || typeof newAttachement == 'string')) throw new TypeError('when defined, newAttachement must be either a Uint8Array, a string or an object');
+								if (newAttachment && !((newAttachment instanceof Uint8Array) || typeof newAttachment == 'object' || typeof newAttachment == 'string')) throw new TypeError('when defined, newAttachment must be either a Uint8Array, a string or an object');
 								if (typeof cb != 'function') throw new TypeError('cb must be a function');
 							}
 
-							c.update(query, newAttributes || newAttachement, cb);
+							c.update(query, newAttributes || newAttachment, cb);
 						}
 					}
 
-					/*var updateFn = function(query, newAttributes, newAttachement, cb){
+					/*var updateFn = function(query, newAttributes, newAttachment, cb){
 						if (forceTypeTests){
 							if (!(typeof query == 'string' || typeof query == 'object')) throw new TypeError('query must be either a string or an object');
-							if (!(newAttributes || newAttachement)) throw new TypeError('either newAttributes or newAttachement must be defined');
+							if (!(newAttributes || newAttachment)) throw new TypeError('either newAttributes or newAttachment must be defined');
 							if (newAttributes && typeof newAttributes != 'object') throw new TypeError('when defined, newAttributes must be an object');
-							if (newAttachement && !((newAttachement instanceof Uint8Array) || typeof newAttachement == 'object' || typeof newAttachement == 'string')) throw new TypeError('when defined, newAttachement must be either a Uint8Array, a string or an object');
+							if (newAttachment && !((newAttachment instanceof Uint8Array) || typeof newAttachment == 'object' || typeof newAttachment == 'string')) throw new TypeError('when defined, newAttachment must be either a Uint8Array, a string or an object');
 							if (typeof cb != 'function') throw new TypeError('cb must be a function');
 						}
 
-						c.update(query, newAttributes || newAttachement, cb);
+						c.update(query, newAttributes || newAttachment, cb);
 					};*/
 
 					function removeFn(c, forceTypeTests){
