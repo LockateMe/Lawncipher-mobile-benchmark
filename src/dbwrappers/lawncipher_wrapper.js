@@ -6,6 +6,7 @@
 
 	var lawncipherRoot = 'lc-benchmark';
 	var loadedCollections = {};
+	var loadedWrappers = {};
 
 	var forceTypeTests;
 
@@ -43,13 +44,15 @@
 						callback(err);
 						return;
 					}
+
+					loadCollection();
 				});
 			} else loadCollection();
 		}
 
 		function loadCollection(){
-			if (loadedCollections[dbName]){
-				callback(undefined, loadedCollections[dbName]);
+			if (loadedWrappers[dbName]){
+				callback(undefined, loadedWrappers[dbName]);
 			} else {
 				db.collection(dbName, indexModel, function(err, c){
 					if (err){
@@ -267,6 +270,8 @@
 						c //Raw collection object
 					);
 
+					loadedWrappers[dbName] = lcWrapper;
+
 					callback(undefined, lcWrapper);
 				});
 			}
@@ -285,6 +290,7 @@
 		for (var colName in loadedCollections){
 			loadedCollections[colName].close();
 			delete loadedCollections[colName];
+			delete loadedWrappers[colName];
 		}
 
 		db.close();
