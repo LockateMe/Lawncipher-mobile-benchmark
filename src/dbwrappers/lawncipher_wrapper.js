@@ -178,7 +178,7 @@
 					};*/
 
 					function updateFn(c, forceTypeTests){
-						return function(query, newAttributes, newAttachment, cb){
+						return function(query, newAttributes, newAttachment, cb, indexOnly){
 							if (forceTypeTests){
 								if (!(typeof query == 'string' || typeof query == 'object')) throw new TypeError('query must be either a string or an object');
 								if (!(newAttributes || newAttachment)) throw new TypeError('either newAttributes or newAttachment must be defined');
@@ -187,7 +187,7 @@
 								if (typeof cb != 'function') throw new TypeError('cb must be a function');
 							}
 
-							c.update(query, newAttributes || newAttachment, cb);
+							c.update(query, newAttributes || newAttachment, cb, indexOnly);
 						}
 					}
 
