@@ -97,7 +97,7 @@
 			}
 		}
 
-		function processResponseFactory(_cb){
+		function processResponseFactory(_cb, indexOnly){
 			return function(err, dbResponse){
 				if (err){
 					_cb(err);
@@ -118,7 +118,7 @@
 
 				for (var i = 0; i < resultSet.length; i++){
 					var attList = resultSet[i]._attachments && Object.keys(_attachments)
-					if (attList && attList.length > 0){
+					if (!indexOnly && attList && attList.length > 0){
 						var theattachment = resultSet[i]._attachments[attList[0]];
 						//var aType = theattachment.content_type;
 						//if (content_type.indexOf('text') != -1) attachmentsFirstRs.push(theattachment.data);
@@ -137,7 +137,7 @@
 					}
 				}
 
-				_cb(undefined, attachmentsFirstRs);
+				//_cb(undefined, attachmentsFirstRs);
 			}
 		}
 
@@ -366,16 +366,68 @@
 		}
 
 		function updateFn(p, forceTypeTests){
-			return function(query, newAttributes, newAttachment, cb){
+			return function(query, newAttributes, newAttachment, cb, indexOnly){
 				if (forceTypeTests){
 					if (!(typeof query == 'string' || typeof query == 'object')) throw new TypeError('query must be either a string or an object');
 					if (!(newAttributes || newAttachment)) throw new TypeError('either newAttributes or newAttachment must be defined');
+					if (newAttributes && newAttachment) throw new TypeError('newAttributes and newAttachment cannot be defined and updated at the same time');
 					if (newAttributes && typeof newAttributes != 'object') throw new TypeError('when defined, newAttributes must be an object');
 					if (newAttachment && !((newAttachment instanceof Uint8Array) || typeof newAttachment == 'object' || typeof newAttachment == 'string')) throw new TypeError('when defined, newAttachment must be either a Uint8Array, a string or an object');
 					if (typeof cb != 'function') throw new TypeError('cb must be a function');
 				}
 
+				var queryOptions = {include_docs: true, attachments: true};
 
+				if (typeof query == 'object'){
+					p.query(mapFnFactory(query), queryOptions, processResponseFactory(function(err, docs){
+						if (err){
+							cb(err)
+						} else {
+							processUpdates(docs);
+						}
+					}, indexOnly));
+				} else {
+					p.query(mapIdFnFactory(query), queryOptions, processResponseFactory(function(err, docs){
+						if (err){
+							cb(err);
+						} else {
+							processUpdates(docs);
+						}
+					}, indexOnly));
+				}
+
+				function processUpdates(docs){
+					if (newAttributes){
+						docs.forEach(function(currentDoc){
+							for (var attName in newAttributes){
+								currentDoc[attName] = newAttributes[attName];
+							}
+						});
+					} else {
+						var inlineAttachement = prepareInlineAttachment(newAttachment);
+						docs.forEach(function(currentDoc){
+							currentDoc._attachments = inlineAttachement;
+						});
+					}
+
+					p.bulkDocs(docs, function(err, res){
+						if (err){
+							cb(err);
+							return;
+						}
+
+						var updatedDocsCount = 0;
+						for (var i = 0; i < res.length; i++){
+							if (res[i].ok){
+								updatedDocsCount++;
+							} else {
+								console.log('Cannot be updated: ' + JSON.stringify(res[i]));
+							}
+						}
+
+						cb(undefined, updatedDocsCount);
+					});
+				}
 			}
 		}
 
@@ -386,7 +438,49 @@
 					if (typeof cb != 'function') throw new TypeError('cb must be a function');
 				}
 
+				var queryOptions = {include_docs: true, attachments: true};
 
+				if (typeof q == 'object'){
+					p.query(mapFnFactory(q), queryOptions, processResponseFactory(function(err, docs){
+						if (err){
+							cb(err)
+						} else {
+							processRemovals(docs);
+						}
+					}, indexOnly));
+				} else {
+					p.query(mapIdFnFactory(q), queryOptions, processResponseFactory(function(err, docs){
+						if (err){
+							cb(err);
+						} else {
+							processRemovals(docs);
+						}
+					}, indexOnly));
+				}
+
+				function processRemovals(docs){
+					docs.forEach(function(currentDoc){
+						currentDoc._deleted = true;
+					});
+
+					p.bulkDocs(docs, function(err, res){
+						if (err){
+							cb(err);
+							return;
+						}
+					});
+
+					var deletedDocsCount = 0;
+					for (var i = 0; i < res.length; i++){
+						if (res[i].ok){
+							deletedDocsCount++;
+						} else {
+							console.log('Cannot be deleted: ' + JSON.stringify(res[i]));
+						}
+					}
+
+					cb(undefined, deletedDocsCount);
+				}
 			}
 		}
 
@@ -402,7 +496,35 @@
 	LawncipherDrivers.clearPouch = function(cb){
 		if (typeof cb != 'function') throw new TypeError('cb must be a function');
 
+		var currentInstances = Object.keys(pouchInstances);
 
+		var errors = [];
+		var delIndex = 0;
+
+		function deleteOne(){
+			var currentPName = currentInstances[delIndex];
+
+			var currentP = pouchInstances[currentPName];
+
+			delete pouchWrappers[currentPName];
+
+			currentP.destroy(function(err){
+				if (err) errors.push(err);
+
+				next();
+			});
+		}
+
+		function next(){
+			delIndex++;
+			if (delIndex == currentInstances.length){
+				cb(errors.length > 0 ? errors : undefined);
+			} else {
+				deleteOne();
+			}
+		}
+
+		deleteOne();
 	};
 
 })(window.LawncipherDrivers = window.LawncipherDrivers || {}, window);
