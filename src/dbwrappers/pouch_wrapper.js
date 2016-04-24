@@ -6,6 +6,10 @@
 
 	var forceTypeTests;
 
+	var sodium = window.sodium;
+	var to_base64 = sodium.to_base64, from_base64 = sodium.from_base64;
+	var to_string = sodium.to_string, from_string = sodium.from_string;
+
 	LawncipherDrivers.initPouch = function(dbName, callback, adapter){
 		if (!(typeof dbName == 'string' && dbName.length > 0)) throw new TypeError('dbName must be a non-empty string');
 		if (typeof callback != 'function') throw new TypeError('callback must be a function');
@@ -13,10 +17,32 @@
 		if (adapter && typeof adapter != 'string') throw new TypeError('when defined, adapter must be a string');
 		adapter = adapter || 'websql';
 
+		forceTypeTests = typeof window.forceTypeTests == 'boolean' ? window.forceTypeTests : true;
+
+		if (pouchWrappers[dbName]){
+			callback(undefined, pouchWrappers[dbName]);
+			return;
+		}
+
 		var pInstance = new PouchDB(dbName, {adapter: adapter});
 		pouchInstances[dbName] = pInstance;
 
-		forceTypeTests = typeof window.forceTypeTests == 'boolean' ? window.forceTypeTests : true;
+		var pouchWrapper = new DBWrapper(
+			'PouchDB',
+			getFn(pInstance, forceTypeTests),
+			findFn(pInstance, forceTypeTests),
+			findOneFn(pInstance, forceTypeTests),
+			saveFn(pInstance, forceTypeTests),
+			bulkSaveFn(pInstance, forceTypeTests),
+			updateFn(pInstance, forceTypeTests),
+			removeFn(pInstance, forceTypeTests),
+			clearAllFn(pInstance),
+			pInstance
+		);
+
+		pouchWrappers[dbName] = pouchWrapper;
+
+		callback(undefined, pouchWrapper);
 
 		function mapFnFactory(q){
 			//Shallow copy of query, ignoring lawncipher-specific query operators
@@ -79,25 +105,25 @@
 				}
 
 				var resultSet = dbResponse.rows;
-				var attachementsFirstRs = new Array(resultSet.length);
+				var attachmentsFirstRs = new Array(resultSet.length);
 
 				var firedCbs = 0;
 
 				function endOne(){
 					firedCbs++;
 					if (firedCbs == resultSet.length){
-						_cb(undefined, attachementsFirstRs);
+						_cb(undefined, attachmentsFirstRs);
 					}
 				}
 
 				for (var i = 0; i < resultSet.length; i++){
-					var attList = resultSet[i]._attachements && Object.keys(_attachements)
+					var attList = resultSet[i]._attachments && Object.keys(_attachments)
 					if (attList && attList.length > 0){
-						var theAttachement = resultSet[i]._attachements[attList[0]];
-						//var aType = theAttachement.content_type;
-						//if (content_type.indexOf('text') != -1) attachementsFirstRs.push(theAttachement.data);
-						//if (content_type.indexOf('json') != -1) attachementsFirstRs.push(JSON.parse(theAttachement.data));
-						processResponseBlob(theAttachement, i, attachementsFirstRs, function(_pErr){
+						var theattachment = resultSet[i]._attachments[attList[0]];
+						//var aType = theattachment.content_type;
+						//if (content_type.indexOf('text') != -1) attachmentsFirstRs.push(theattachment.data);
+						//if (content_type.indexOf('json') != -1) attachmentsFirstRs.push(JSON.parse(theattachment.data));
+						processResponseBlob(theattachment, i, attachmentsFirstRs, function(_pErr){
 							if (_pErr){
 								_cb(_pErr);
 								return;
@@ -106,12 +132,12 @@
 							endOne();
 						});
 					} else {
-						attachementsFirstRs[i] = resultSet[i];
+						attachmentsFirstRs[i] = resultSet[i];
 						endOne();
 					}
 				}
 
-				_cb(undefined, attachementsFirstRs);
+				_cb(undefined, attachmentsFirstRs);
 			}
 		}
 
@@ -158,6 +184,34 @@
 			else fs.readAsArrayBuffer();
 		}
 
+		function prepareInlineAttachment(data, name){
+			if (!(data instanceof Uint8Array || typeof data == 'object' || typeof data == 'string')) throw new TypeError('data must be either a Uint8Array, an object or a string');
+			//Defaulting attachment name to 'a'
+			name = name || 'a';
+			if (typeof name != 'string') throw new TypeError('when provided, name must be a string');
+
+			var aType, aValue;
+			if (data instanceof Uint8Array){
+				aType = 'application/octet-stream';
+			} else if (typeof data == 'object'){
+				aType = 'application/json';
+				data = from_string(JSON.stringify(data));
+			} else {
+				aType = 'text/plain';
+				data = from_string(data);
+			}
+
+			aValue = to_base64(data, true);
+
+			var attachmentsObj = {};
+			attachmentsObj[name] = {
+				content_type: aType,
+				data: aValue
+			};
+
+			return attachmentsObj;
+		}
+
 		function getFn(p, forceTypeTests){
 			return function(id, cb){
 				if (forceTypeTests){
@@ -165,15 +219,15 @@
 					if (typeof cb != 'function') throw new TypeError('cb must be a function');
 				}
 
-				p.get(id, {attachements: true}, function(err, doc){
+				p.get(id, {attachments: true}, function(err, doc){
 					if (err){
 						cb(err);
 						return;
 					}
 
-					if (doc._attachements){
-						console.log('attachements of doc ' + id);
-						console.log(JSON.stringify(doc._attachements));
+					if (doc._attachments){
+						console.log('attachments of doc ' + id);
+						console.log(JSON.stringify(doc._attachments));
 					}
 
 					cb(undefined, doc);
@@ -189,7 +243,7 @@
 					if (limit && !(typeof limit == 'number' && Math.floor(limit) == limit && limit > 0)) throw new TypeError('when defined, limit must be a strictly positive integer number');
 				}
 
-				var queryOptions = {include_docs: true, attachements: true};
+				var queryOptions = {include_docs: true, attachments: true};
 
 				if (typeof q == 'object'){
 					if (limit) queryOptions.limit = limit;
@@ -209,18 +263,145 @@
 					if (typeof cb != 'function') throw new TypeError('cb must be a function');
 				}
 
-				var queryOptions = {include_docs: true, attachements: true, limit: 1};
+				var queryOptions = {include_docs: true, attachments: true, limit: 1};
 
 				if (typeof q == 'object'){
-					p.query(mapFnFactory(q), queryOptions)
+					p.query(mapFnFactory(q), queryOptions, processResponseFactory(cb))
 				} else {
-
+					p.query(mapIdFnFactory(q), queryOptions, processResponseFactory(cb));
 				}
+			}
+		}
+
+		function saveFn(p, forceTypeTests){
+			return function(doc, attachment, cb){
+				if (forceTypeTests){
+					if (!(doc || attachment)) throw new TypeError('either doc or attachment must be defined');
+					if (doc && typeof doc != 'object') throw new TypeError('when defined, doc must be an object');
+					if (attachment && !(attachment instanceof Uint8Array || typeof attachment == 'object' || typeof attachment == 'string')) throw new TypeError('when defined, attachment must either be a Uint8Array, an object or a string');
+					if (typeof cb != 'function') throw new TypeError('cb must be a function');
+				}
+
+				//In case attachment is defined but doc is not, generate a dummy doc to "have the attachment attached to it"
+				doc = doc || {addDate: Date.now()};
+
+				p.post(doc, function(err, res){
+					if (err){
+						cb(err);
+						return;
+					}
+
+					if (!res.ok){
+						console.error('Received response on db.post: ' + JSON.stringify(res));
+					}
+
+					if (attachment){
+						var aType;
+						if (attachment instanceof Uint8Array) aType = 'application/octet-stream';
+						else if (typeof attachment == 'object') aType = 'application/json';
+						else aType = 'text/plain';
+
+						var aBlob = new Blob([attachment]);
+						p.putAttachment(res.id, 'a', res.rev, aType, function(err, aRes){
+							if (err){
+								cb(err);
+								return;
+							}
+
+							//Curiosity... We are returning the docId anyway because it's enough to get the attachment again
+							console.log('docId: ' + res.id);
+							console.log('docId on attachment: ' + aRes.id);
+
+							if (!aRes.ok){
+								console.error('Received response on db.putAttachment: ' + JSON.stringify(aRes));
+							}
+
+							cb(undefined, res.id);
+						});
+					} else {
+						cb(undefined, res.id);
+					}
+				});
+			}
+		}
+
+		function bulkSaveFn(p, forceTypeTests){
+			return function(docs, attachments, cb){
+				if (forceTypeTests){
+					if (!(docs || attachments)) throw new TypeError('either docs or attachments must be defined');
+					if (docs && !(Array.isArray(docs) && docs.length > 0)) throw new TypeError('when defined, docs must be a non-empty array');
+					if (attachments && !(Array.isArray(attachments) && attachments.length > 0)) throw new TypeError('when defined, attachments must be a non-empty array');
+					if (docs && attachments && !(docs.length == attachments.length)) throw new TypeError('when both docs attachments are provided, they must have the same length');
+					if (typeof cb != 'function') throw new TypeError('cb must be a function');
+				}
+
+				var docsList = [];
+				for (var i = 0; i < docsList.length; i++){
+					var currentD = docsList[i];
+					var currentA = attachments[i];
+
+					var mergedD = {};
+					for (var currentAttr in currentD){
+						if (currentAttr.indexOf('_') == 0) continue;
+						mergedD[currentAttr] = currentD[currentAttr];
+					}
+					mergedD['_attachments'] = prepareInlineAttachment(currentA);
+					docsList.push(mergedD);
+				}
+
+				p.bulkDocs(docsList, function(err, res){
+					if (err){
+						cb(err);
+						return;
+					}
+
+					var docsIds = [];
+					for (var i = 0; i < res.length; i++){
+						docsIds.push(res[i].id);
+					}
+					cb(undefined, docsIds);
+				});
+
+			}
+		}
+
+		function updateFn(p, forceTypeTests){
+			return function(query, newAttributes, newAttachment, cb){
+				if (forceTypeTests){
+					if (!(typeof query == 'string' || typeof query == 'object')) throw new TypeError('query must be either a string or an object');
+					if (!(newAttributes || newAttachment)) throw new TypeError('either newAttributes or newAttachment must be defined');
+					if (newAttributes && typeof newAttributes != 'object') throw new TypeError('when defined, newAttributes must be an object');
+					if (newAttachment && !((newAttachment instanceof Uint8Array) || typeof newAttachment == 'object' || typeof newAttachment == 'string')) throw new TypeError('when defined, newAttachment must be either a Uint8Array, a string or an object');
+					if (typeof cb != 'function') throw new TypeError('cb must be a function');
+				}
+
+
+			}
+		}
+
+		function removeFn(p, forceTypeTests){
+			return function(q, cb){
+				if (forceTypeTests){
+					if (!(typeof q == 'object' || typeof q == 'string')) throw new TypeError('query must either be an object or a string');
+					if (typeof cb != 'function') throw new TypeError('cb must be a function');
+				}
+
+
+			}
+		}
+
+		function clearAllFn(p){
+			return function(cb){
+				if (typeof cb != 'function') throw new TypeError('cb must be a function');
+
+				p.destroy(cb);
 			}
 		}
 	};
 
 	LawncipherDrivers.clearPouch = function(cb){
+		if (typeof cb != 'function') throw new TypeError('cb must be a function');
+
 
 	};
 
