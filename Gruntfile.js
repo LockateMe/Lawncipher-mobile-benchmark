@@ -16,8 +16,10 @@ module.exports = function(grunt){
 					banner: '<%= meta.banner %>'
 				},
 				src: [
+					'src/chrono.js',
 					'src/dbwrapper.js',
-					'src/dbWrappers/lawncipher_wrapper.js',
+					'src/dbwrappers/lawncipher_wrapper.js',
+					'src/dbwrappers/pouch_wrapper.js',
 					'src/workload.js',
 					'src/workloads.js',
 					'src/workloadRunner.js',
