@@ -182,6 +182,7 @@
 							if (forceTypeTests){
 								if (!(typeof query == 'string' || typeof query == 'object')) throw new TypeError('query must be either a string or an object');
 								if (!(newAttributes || newAttachment)) throw new TypeError('either newAttributes or newAttachment must be defined');
+								if (newAttributes && newAttachment) throw new TypeError('newAttributes and newAttachment cannot be defined at the same time');
 								if (newAttributes && typeof newAttributes != 'object') throw new TypeError('when defined, newAttributes must be an object');
 								if (newAttachment && !((newAttachment instanceof Uint8Array) || typeof newAttachment == 'object' || typeof newAttachment == 'string')) throw new TypeError('when defined, newAttachment must be either a Uint8Array, a string or an object');
 								if (typeof cb != 'function') throw new TypeError('cb must be a function');
