@@ -9,13 +9,24 @@ This application runs various workloads against [Lawncipher](https://github.com/
 
 This projects was developed as part of a semester project in a "Business Analytics & Intelligence" course given by Prof. Periklis Andritsos at HEC Lausanne.
 
+## Design principle
+
+This app was developed to see how Lawncipher would perform against other mobile document stores. Therefore, it is designed to test Lawncipher's features and capabilities. If a feature or a capability is not directly available in a "competing" document store, that feature is "added" in this app to allow the comparison.
+
+__Example of design choice, applying this principle:__
+Lawncipher allows to store JSON, string or Uint8Array/binary blobs. It doesn't care which of these types of data you provide. It will store that data and remember of what type it was, such that when you retrieve the said data, it will recover it's initial type.
+
+In PouchDB, before you store an attachment, you have to encapsulate it in a [`Blob`](https://developer.mozilla.org/en/docs/Web/API/Blob) instance. When you retrieve the attachment from the document store, you have to reconvert/decapsulate the attachment yourself. In fairness, PouchDB allows you to indicate what type of data it is by providing a MIME string; but still, you have to do the conversion yourself.
+
+I'm writing wrappers for every document store used in this app (to have a uniform interface to run the workloads on). In this current example, it's the object that wraps PouchDB that runs these data/format conversions, so that the wrapper can provide the same functionality/flexibility on every document store. And the time used by these conversions will be counted in the time taken to run the workload on the document store. I'll try to have an additional, separate time counter for these conversion operations, but I can't be sure yet that it will be precise enough.
+
 ## Prerequisites
 
 * Node.js
-* Cordova
+	* Cordova
+	* Bower
+	* Grunt
 * Make
-* Bower
-* Grunt
 * iOS and/or Android SDKs
 
 ## Types of workloads
