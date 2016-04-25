@@ -7,12 +7,14 @@ function Chrono(){
 	var interval;
 	var startTime, stopTime;
 
+	var nowFn = (window.performance && window.performance.now) || Date.now;
+
 	/**
 	* Start a time measurement
 	* If a time measurement is already ongoing, this method doesn't do anything (not even throwing an error)
 	*/
 	this.start = function(){
-		startTime = startTime || Date.now();
+		startTime = startTime || nowFn();
 	};
 
 	/**
@@ -22,7 +24,7 @@ function Chrono(){
 	*/
 	this.stop = function(){
 		if (!startTime) return -1;
-		stopTime = Date.now();
+		stopTime = nowFn();
 
 		interval = stopTime - startTime;
 		totalDuration += interval;
