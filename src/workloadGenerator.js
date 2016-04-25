@@ -22,6 +22,11 @@ function WorkloadGenerator(dbWrappers, _workloadOptions){
 		}
 	};
 
+	/*
+	Insert data can be determined by the insert proportion...
+	Let's set r = insertProportion. 1-r will be the proportion of data to be inserted ahead of time
+	*/
+
 	var workloadOptions = {};
 	//Shallow copy of _workloadOptions
 	for (var propName in _workloadOptions){
@@ -98,7 +103,30 @@ function WorkloadGenerator(dbWrappers, _workloadOptions){
 	}
 
 	function generateUpdateFromDoc(d){
+		if (typeof d != 'object') throw new TypeError('d must be an object');
 
+		//var dCopy = {};
+		var newAttributes = {};
+		var selector = d._id || d;
+
+		//Listing current documents attributes (to see which ones we would modify)
+		//Make a shallow copy using this occasion
+		var currentAttributes = Object.keys(d);
+		for (var i = 0; i < currentAttributes.length; i++){
+			//Excluding attributes beginning with an underscore (e.g: _id, _rev, _attachments)
+			//dCopy[currentAttributes[i]] = d[currentAttributes[i]];
+			if (currentAttributes[i].indexOf('_') == 0) currentAttributes.splice(i, 1);
+		}
+
+		//Choosing a number of attributes to modify between [1, numberOfAvailableAttributes]
+		var numToModify = 1 + Math.floor(Math.random() * (currentAttributes.length - 1));
+		currentAttributes = shuffleList(currentAttributes).slice(0, numToModify);
+
+		for (var i = 0; i < currentAttributes.length; i++){
+			newAttributes[currentAttributes[i]] = generateString(workloadOptions.fieldSize);
+		}
+
+		return {selector: selector, newAttributes: newAttributes};
 	}
 
 	function generateBlob(min, max){ //Generate a blob in the [min, max] range in kilobytes. Defaults to [100, 200]
@@ -137,6 +165,30 @@ function WorkloadGenerator(dbWrappers, _workloadOptions){
 		var b = new Uint8Array(length);
 		window.crypto.getRandomValues(b);
 		return b;
+	}
+
+	function shuffleList(a){
+		if (!(Array.isArray(a) && a.length > 0)) throw new TypeError('a must be a non empty array');
+
+		var o = [], r = [];
+
+		a.forEach(function(item){
+			o.push({p: Math.random(), v: item});
+		});
+
+		o.sort(function(a, b){
+			if (a.p < b.p){
+				return -1;
+			} else {
+				return 1;
+			}
+		});
+
+		o.forEach(function(item){
+			r.push(item.v);
+		});
+
+		return r;
 	}
 
 	/*
