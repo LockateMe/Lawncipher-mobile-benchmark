@@ -11,7 +11,15 @@ function WorkloadGenerator(dbWrappers, _workloadOptions){
 		fieldCount: 10,
 		fieldSize: 100,
 		docCount: 5000,
-		generateId: true
+		generateId: true,
+		insertData: true,
+		useAttachments: false,
+		proportions: {
+			read: 0, //Read by Id
+			update: 0, //Update by id or query?
+			insert: 0, //Insert by id or query?
+			query: 0 //Advanced/compound search query
+		}
 	};
 
 	var workloadOptions = {};
@@ -24,12 +32,59 @@ function WorkloadGenerator(dbWrappers, _workloadOptions){
 		workloadOptions[propName] = workloadOptions[propName] || workloadOptionsDefaults[propName];
 	}
 
+	var totalProportions =
+		workloadOptions.proportions.read +
+		workloadOptions.proportions.update +
+		workloadOptions.proportions.insert +
+		workloadOptions.proportions.query;
+
+	if (totalProportions != 1){
+		throw new TypeError('Invalid proportions sum:' + totalProportions);
+	}
+
+	if (!(workloadOptions.fieldNames && workloadOptions.fieldNames.length > 0)){
+		var indexModel = {};
+		var fieldNames = [];
+		var fieldNamesCount = 0;
+
+		var fieldNameLength = Math.ceil(Math.log2(workloadOptions.fieldCount)) * 2;
+
+		if (workloadOptions.generateId){
+			fieldNames.push('_id');
+			fieldNamesCount++;
+		}
+
+		while (fieldNamesCount < workloadOptions.fieldCount){
+			fieldNames.push(generateString(fieldNameLength));
+			fieldNamesCount++;
+		}
+
+		fieldNames.forEach(function(item){
+			if (item == '_id'){
+				indexModel['_id'] = {id: true, type: 'string'};
+			} else {
+				indexModel[item] = 'string';
+			}
+		});
+
+		workloadOptions.fieldNames = fieldNames;
+		workloadOptions.indexModel = indexModel;
+	}
+
+	/*
+	* START : DATA GENERATION FUNCTIONS
+	*/
+
 	function generateDoc(){
 		var genFieldsCount = 0;
 
 		var d = {};
 
-		if (workloadOptions.generateId){
+		for (var i = 0; i < workloadOptions.fieldNames.length; i++){
+			d[workloadOptions.fieldNames[i]] = generateString(workloadOptions.fieldSize);
+		}
+
+		/*if (workloadOptions.generateId){
 			d._id = generateString(workloadOptions.fieldSize);
 			genFieldsCount++;
 		}
@@ -37,13 +92,20 @@ function WorkloadGenerator(dbWrappers, _workloadOptions){
 		while (genFieldsCount < workloadOptions.fieldCount){
 			d[generateString(4)] = generateString(workloadOptions.fieldSize);
 			genFieldsCount++;
-		}
+		}*/
 
 		return d;
 	}
 
-	function generateBlob(){
-		var bKbSize = 100 + Math.round(Math.random() * 100);
+	function generateUpdateFromDoc(d){
+
+	}
+
+	function generateBlob(min, max){ //Generate a blob in the [min, max] range in kilobytes. Defaults to [100, 200]
+		min = min || 100;
+		max = max || 200;
+		var sizeRange = max - min;
+		var bKbSize = min + Math.round(Math.random() * sizeRange);
 		return generateBuffer(bKbSize * 1024);
 	}
 
@@ -76,6 +138,10 @@ function WorkloadGenerator(dbWrappers, _workloadOptions){
 		window.crypto.getRandomValues(b);
 		return b;
 	}
+
+	/*
+	* END : DATA GENERATION FUNCTIONS
+	*/
 
 	function generateFunctionFactory(){
 		return function(){}

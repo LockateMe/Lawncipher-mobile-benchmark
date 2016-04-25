@@ -20,7 +20,7 @@ function Workload(dbWrappers, generateFunction, runnerFunction, name){
 	this.run = function(callback){
 		if (typeof callback != 'function') throw new TypeError('callback must be a function');
 
-
+		var results = {};
 
 		var runIndex = 0;
 		var results = {};
@@ -40,7 +40,7 @@ function Workload(dbWrappers, generateFunction, runnerFunction, name){
 			runIndex++;
 
 			if (runIndex == dbWrappers){
-				
+
 			}
 		}
 	}
