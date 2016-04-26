@@ -12,6 +12,8 @@ function Workload(dbWrappers, generateFunction, runnerFunction, name){
 	* String workloadName
 	*/
 
+	var self = this;
+
 	this._dbDrivers = dbWrappers;
 	this._generateFunction = generateFunction;
 	this._runnerFunction = runnerFunction;
@@ -25,8 +27,29 @@ function Workload(dbWrappers, generateFunction, runnerFunction, name){
 		var runIndex = 0;
 		var results = {};
 
+		self.generateFunction(self._dbDrivers, function(err){
+			if (err){
+				callback(err);
+				return;
+			}
+
+			self.runnerFunction(self._dbDrivers, callback);
+		});
+
+		/*
+		var initIndex = 0;
+
+		function initOne(){
+			dbWrappers[initIndex].
+		}
+
+		function initNext(){
+
+		}
+		*/
+
 		function runOnce(){
-			runnerFunction(dbWrappers, function(err){
+			runnerFunction(dbWrappers[i], function(err){
 				if (err){
 					callback(err);
 					return;

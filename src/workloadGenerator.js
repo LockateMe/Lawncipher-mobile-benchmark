@@ -1,9 +1,18 @@
-function WorkloadGenerator(dbWrappers, _workloadOptions){
+function generateWorkload(/*dbWrappers,*/ _workloadOptions){
 	var from_string = sodium.from_string, to_string = sodium.to_string;
 	var from_base64 = sodium.from_base64, to_base64 = sodium.to_base64;
 	var from_hex = sodium.from_hex, to_hex = sodium.to_hex;
 
-	checkDBWrapperArray(dbWrappers);
+	//checkDBWrapperArray(dbWrappers);
+
+	var workloadData = [];
+	var workloadQueries = [];
+	var workloadCounters = {
+		read: 0,
+		update: 0,
+		insert: 0,
+		query: 0
+	};
 
 	if (_workloadOptions && typeof _workloadOptions != 'object') throw new TypeError('when defined, _workloadOptions must be an object');
 
@@ -11,6 +20,7 @@ function WorkloadGenerator(dbWrappers, _workloadOptions){
 		fieldCount: 10,
 		fieldSize: 100,
 		docCount: 5000,
+		operationCount: 5000,
 		generateId: true,
 		insertData: true,
 		useAttachments: false,
@@ -170,7 +180,7 @@ function WorkloadGenerator(dbWrappers, _workloadOptions){
 	function shuffleList(a){
 		if (!(Array.isArray(a) && a.length > 0)) throw new TypeError('a must be a non empty array');
 
-		var o = [], r = [];
+		var o = [];
 
 		a.forEach(function(item){
 			o.push({p: Math.random(), v: item});
@@ -184,18 +194,84 @@ function WorkloadGenerator(dbWrappers, _workloadOptions){
 			}
 		});
 
-		o.forEach(function(item){
-			r.push(item.v);
+		return o.map(function(item){
+			return item.v;
 		});
+	}
 
-		return r;
+	function randomListItem(l){
+		if (!Array.isArray(l)) throw new TypeError('l must be an array');
+		if (l.length < 2) throw new TypeError('l must contain at least 2 items');
+
+		var itemIndex = Math.floor(Math.random() * l.length);
+		return l[itemIndex];
 	}
 
 	/*
 	* END : DATA GENERATION FUNCTIONS
 	*/
 
-	function generateFunctionFactory(){
-		return function(){}
+	function generateFunctionFactory(workloadOptions, dataList, attachmentsList){
+		return function(dbWrappers, cb){
+			checkDBWrapperArray(dbWrappers);
+			if (typeof cb != 'function') throw new TypeError('cb must be a function');
+
+			var aotInsertProportion =  1 - workloadOptions.proportions.insert;
+			var aotDocNumber = Math.round(aotInsertProportion * workloadOptions.docCount);
+
+			for (var i = 0; i < aotDocNumber; i++){
+				dataList.push(generateDoc());
+			}
+
+			var bulkSaveIndex = 0;
+
+			function bulkSaveOne(){
+				dbWrappers[bulkSaveIndex].bulkSave(dataList, attachmentsList, function(err, docsIds){
+					if (err){
+						cb(err);
+						return;
+					}
+
+					bulkSaveNext();
+				});
+			}
+
+			function bulkSaveNext(){
+				bulkSaveIndex++;
+				if (bulkSaveIndex == dbWrappers.length){
+					cb();
+				} else {
+					bulkSaveOne();
+				}
+			}
+
+			//Start the bulk insertion loop
+			bulkSaveOne();
+		}
+	}
+
+	function runnerFunctionFactory(dataList, queriesList){
+		return function(dbWrappers, cb){
+
+			var gErrors = {}; //Global errors object
+			var results = {}; //Global performance results object
+			var wrapperIndex = 0;
+
+			//Prepare queries and what not.
+			//Generate missing docs (regarding insert proportion)
+			//Generate queries based upon existing docs, that are randomly selected from dataList
+
+			//Ensuring proportions balance : current proportions are recalculated at each iteration
+			//The type of operation to be scheduled/done in the current iteration is the type that has it's current proportion that furthest from its target proportion
+
+			function runOnce(){
+
+			}
+
+			function nextDb(){
+				wrapperIndex++;
+			}
+
+		}
 	}
 }
