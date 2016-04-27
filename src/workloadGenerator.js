@@ -1,9 +1,9 @@
-function generateWorkload(/*dbWrappers,*/ _workloadOptions){
+function Workload(dbWrappers, _workloadOptions, name){
 	var from_string = sodium.from_string, to_string = sodium.to_string;
 	var from_base64 = sodium.from_base64, to_base64 = sodium.to_base64;
 	var from_hex = sodium.from_hex, to_hex = sodium.to_hex;
 
-	//checkDBWrapperArray(dbWrappers);
+	checkDBWrapperArray(dbWrappers);
 
 	var workloadData = [];
 	var workloadQueries = [];
@@ -24,13 +24,18 @@ function generateWorkload(/*dbWrappers,*/ _workloadOptions){
 		generateId: true,
 		insertData: true,
 		useAttachments: false,
+		shuffleWorkloads: true,
 		proportions: {
 			read: 0, //Read by Id
 			update: 0, //Update by id or query?
 			insert: 0, //Insert by id or query?
 			query: 0 //Advanced/compound search query
-		}
+		},
+		name: typeof name == 'string' ? name : 'Workload'
 	};
+
+
+	/// DO NOT USE ARRAY.PUSH
 
 	/*
 	Insert data can be determined by the insert proportion...
