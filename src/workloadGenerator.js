@@ -5,8 +5,8 @@ function Workload(dbWrappers, _workloadOptions, name){
 
 	checkDBWrapperArray(dbWrappers);
 
-	var workloadData = [];
-	var workloadQueries = [];
+	//Declaring workload arrays
+	var workloadData, workloadQueries;
 	var workloadCounters = {
 		read: 0,
 		update: 0,
@@ -34,7 +34,6 @@ function Workload(dbWrappers, _workloadOptions, name){
 		name: typeof name == 'string' ? name : 'Workload'
 	};
 
-
 	/// DO NOT USE ARRAY.PUSH
 
 	/*
@@ -52,6 +51,11 @@ function Workload(dbWrappers, _workloadOptions, name){
 		workloadOptions[propName] = workloadOptions[propName] || workloadOptionsDefaults[propName];
 	}
 
+	//Sizing/allocating workload arrays
+	workloadData = new Array(workloadOptions.docCount);
+	workloadQueries = new Array(workloadOptions.operationCount);
+
+	//Checking proportions integrity
 	var totalProportions =
 		workloadOptions.proportions.read +
 		workloadOptions.proportions.update +
@@ -64,18 +68,18 @@ function Workload(dbWrappers, _workloadOptions, name){
 
 	if (!(workloadOptions.fieldNames && workloadOptions.fieldNames.length > 0)){
 		var indexModel = {};
-		var fieldNames = [];
+		var fieldNames = new Array(workloadOptions.fieldCount);
 		var fieldNamesCount = 0;
 
 		var fieldNameLength = Math.ceil(Math.log2(workloadOptions.fieldCount)) * 2;
 
 		if (workloadOptions.generateId){
-			fieldNames.push('_id');
+			fieldNames[fieldNamesCount] = '_id';
 			fieldNamesCount++;
 		}
 
 		while (fieldNamesCount < workloadOptions.fieldCount){
-			fieldNames.push(generateString(fieldNameLength));
+			fieldNames[fieldNamesCount] = generateString(fieldNameLength);
 			fieldNamesCount++;
 		}
 
@@ -185,10 +189,10 @@ function Workload(dbWrappers, _workloadOptions, name){
 	function shuffleList(a){
 		if (!(Array.isArray(a) && a.length > 0)) throw new TypeError('a must be a non empty array');
 
-		var o = [];
+		var o = new Array(a.length);
 
-		a.forEach(function(item){
-			o.push({p: Math.random(), v: item});
+		a.forEach(function(item, index){
+			o[index] = {p: Math.random(), v: item};
 		});
 
 		o.sort(function(a, b){
@@ -225,7 +229,7 @@ function Workload(dbWrappers, _workloadOptions, name){
 			var aotDocNumber = Math.round(aotInsertProportion * workloadOptions.docCount);
 
 			for (var i = 0; i < aotDocNumber; i++){
-				dataList.push(generateDoc());
+				dataList[i] = generateDoc();
 			}
 
 			var bulkSaveIndex = 0;
