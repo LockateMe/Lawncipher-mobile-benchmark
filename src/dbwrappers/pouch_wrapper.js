@@ -335,8 +335,8 @@
 					if (typeof cb != 'function') throw new TypeError('cb must be a function');
 				}
 
-				var docsList = [];
-				for (var i = 0; i < docsList.length; i++){
+				var docsList = new Array(docs.length);
+				for (var i = 0; i < docs.length; i++){
 					var currentD = docsList[i];
 					var currentA = attachments[i];
 
@@ -346,7 +346,7 @@
 						mergedD[currentAttr] = currentD[currentAttr];
 					}
 					mergedD['_attachments'] = prepareInlineAttachment(currentA);
-					docsList.push(mergedD);
+					docsList[i] = mergedD;
 				}
 
 				p.bulkDocs(docsList, function(err, res){
@@ -355,9 +355,9 @@
 						return;
 					}
 
-					var docsIds = [];
+					var docsIds = new Array(res.length);
 					for (var i = 0; i < res.length; i++){
-						docsIds.push(res[i].id);
+						docsIds[i] = res[i].id;
 					}
 					cb(undefined, docsIds);
 				});
