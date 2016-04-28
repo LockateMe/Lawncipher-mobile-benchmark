@@ -8,6 +8,10 @@
 	var loadedCollections = {};
 	var loadedWrappers = {};
 
+	//In case an indexModel is used, these will be redundant
+	var idToLawncipherTranslationIndexes = {};
+	var lawncipherToIdTranslationIndexes = {};
+
 	var forceTypeTests;
 
 	LawncipherDrivers.initLawncipher = function(dbName, callback, indexModel){
@@ -65,14 +69,14 @@
 					//Build wrapper here and return it
 					var dbName = 'lawncipher';
 
-					function getFn(c, forceTypeTests){
+					function getFn(c, forceTypeTests, idToLawncipher){
 						return function(id, cb){
 							if (forceTypeTests){
 								if (typeof id != 'string') throw new TypeError('id must be a string');
 								if (typeof cb != 'function') throw new TypeError('cb must be a function');
 							}
 
-							c.findOne(id, cb);
+							c.findOne(idToLawncipher[id], cb);
 						}
 					}
 
@@ -85,13 +89,15 @@
 						c.findOne(id, cb);
 					};*/
 
-					function findFn(c, forceTypeTests){
+					function findFn(c, forceTypeTests, idToLawncipher){
 						return function(q, cb, limit){
 							if (forceTypeTests){
 								if (!(typeof q == 'object' || typeof q == 'string')) throw new TypeError('q must either be a string (docId) or an object (compound query)');
 								if (typeof cb != 'function') throw new TypeError('cb must be a function');
 								if (limit && !(typeof limit == 'number' && Math.floor(limit) == limit && limit > 0)) throw new TypeError('when defined, limit must be a strictly positive integer number');
 							}
+
+							if (typeof q == 'string') q = idToLawncipher[q];
 
 							c.find(q, cb, limit);
 						}
@@ -107,12 +113,14 @@
 						c.find(q, cb, limit);
 					};*/
 
-					function findOneFn(c, forceTypeTests){
+					function findOneFn(c, forceTypeTests, idToLawncipher){
 						return function(q, cb){
 							if (forceTypeTests){
 								if (!(typeof q == 'string' || typeof q == 'object')) throw new TypeError('q must either be a string (docId) or an object (compound query)');
 								if (typeof cb != 'function') throw new TypeError('cb must be a function');
 							}
+
+							if (typeof q == 'string') q = idToLawncipher[q];
 
 							c.findOne(q, cb);
 						}
@@ -127,7 +135,7 @@
 						c.findOne(q, cb);
 					};*/
 
-					function saveFn(c, forceTypeTests){
+					function saveFn(c, forceTypeTests, idToLawncipher, lawncipherToId){
 						return function(doc, attachment, cb){
 							if (forceTypeTests){
 								if (!(doc || attachment)) throw new TypeError('either doc or attachment must be defined');
@@ -136,7 +144,18 @@
 								if (typeof cb != 'function') throw new TypeError('cb must be a function');
 							}
 
-							c.save(attachment, doc, cb);
+							c.save(attachment, doc, function(err, docId){
+								if (err){
+									cb(err);
+									return;
+								}
+
+								if (doc){
+									lawncipherToId[docId] = doc._id;
+									idToLawncipher[doc._id] = docId;
+								}
+								cb(undefined, doc._id);
+							});
 						}
 					}
 
@@ -151,7 +170,7 @@
 						c.save(attachment, doc, cb);
 					};*/
 
-					function bulkSaveFn(c, forceTypeTests){
+					function bulkSaveFn(c, forceTypeTests, idToLawncipher, lawncipherToId){
 						return function(docs, attachments, cb){
 							if (forceTypeTests){
 								if (!(docs || attachments)) throw new TypeError('either docs or attachments must be defined');
@@ -161,7 +180,24 @@
 								if (typeof cb != 'function') throw new TypeError('cb must be a function');
 							}
 
-							c.bulkSave(attachments, docs, cb);
+							c.bulkSave(attachments, docs, function(err, docIds){
+								if (err){
+									cb(err);
+									return;
+								}
+
+								var translatedIds = new Array(docIds.length);
+
+								if (docs && docs.length > 0){
+									docs.forEach(function(currentDoc, index){
+										lawncipherToId[docIds[index]] = currentDoc._id;
+										idToLawncipher[currentDoc._id] = docIds[index];
+										translatedIds[index] = currentDoc._id;
+									});
+								}
+
+								cb(undefined, translatedIds);
+							});
 						}
 					}
 
@@ -177,7 +213,7 @@
 						c.bulkSave(attachments, docs, cb);
 					};*/
 
-					function updateFn(c, forceTypeTests){
+					function updateFn(c, forceTypeTests, idToLawncipher){
 						return function(query, newAttributes, newAttachment, cb, indexOnly){
 							if (forceTypeTests){
 								if (!(typeof query == 'string' || typeof query == 'object')) throw new TypeError('query must be either a string or an object');
@@ -186,6 +222,10 @@
 								if (newAttributes && typeof newAttributes != 'object') throw new TypeError('when defined, newAttributes must be an object');
 								if (newAttachment && !((newAttachment instanceof Uint8Array) || typeof newAttachment == 'object' || typeof newAttachment == 'string')) throw new TypeError('when defined, newAttachment must be either a Uint8Array, a string or an object');
 								if (typeof cb != 'function') throw new TypeError('cb must be a function');
+							}
+
+							if (typeof query == 'string'){ //Translate id to lawncipherId
+								query = idToLawncipher[query];
 							}
 
 							c.update(query, newAttributes || newAttachment, cb, indexOnly);
@@ -204,11 +244,15 @@
 						c.update(query, newAttributes || newAttachment, cb);
 					};*/
 
-					function removeFn(c, forceTypeTests){
+					function removeFn(c, forceTypeTests, idToLawncipher){
 						return function(q, cb){
 							if (forceTypeTests){
 								if (!(typeof q == 'object' || typeof q == 'string')) throw new TypeError('query must either be an object or a string');
 								if (typeof cb != 'function') throw new TypeError('cb must be a function');
+							}
+
+							if (typeof q == 'string'){
+								q = idToLawncipher[q];
 							}
 
 							c.remove(q, cb);
@@ -224,7 +268,7 @@
 						c.remove(q, cb);
 					};*/
 
-					function clearAllFn(c, db){
+					function clearAllFn(c, db, idToLawncipherTranslationIndexes, lawncipherToIdTranslationIndexes){
 						return function(cb){
 							if (typeof cb != 'function') throw new TypeError('cb must be a function');
 
@@ -237,6 +281,9 @@
 								}
 
 								delete loadedCollections[dbName];
+								delete idToLawncipherTranslationIndexes[dbName];
+								delete lawncipherToIdTranslationIndexes[dbName];
+
 								cb();
 							});
 						}
@@ -258,16 +305,19 @@
 						});
 					};*/
 
+					idToLawncipherTranslationIndexes[dbName] = {};
+					lawncipherToIdTranslationIndexes[dbName] = {};
+
 					var lcWrapper = new DBWrapper(
 						'Lawncipher',
-						getFn(c, forceTypeTests),
-						findFn(c, forceTypeTests),
-						findOneFn(c, forceTypeTests),
-						saveFn(c, forceTypeTests),
-						bulkSaveFn(c, forceTypeTests),
-						updateFn(c, forceTypeTests),
-						removeFn(c, forceTypeTests),
-						clearAllFn(c, db),
+						getFn(c, forceTypeTests, idToLawncipherTranslationIndexes[dbName]),
+						findFn(c, forceTypeTests, idToLawncipherTranslationIndexes[dbName]),
+						findOneFn(c, forceTypeTests, idToLawncipherTranslationIndexes[dbName]),
+						saveFn(c, forceTypeTests, idToLawncipherTranslationIndexes[dbName], lawncipherToIdTranslationIndexes[dbName]),
+						bulkSaveFn(c, forceTypeTests, idToLawncipherTranslationIndexes[dbName], lawncipherToIdTranslationIndexes[dbName]),
+						updateFn(c, forceTypeTests, idToLawncipherTranslationIndexes[dbName]),
+						removeFn(c, forceTypeTests, idToLawncipherTranslationIndexes[dbName]),
+						clearAllFn(c, db, idToLawncipherTranslationIndexes, lawncipherToIdTranslationIndexes),
 						c //Raw collection object
 					);
 
@@ -292,6 +342,8 @@
 			loadedCollections[colName].close();
 			delete loadedCollections[colName];
 			delete loadedWrappers[colName];
+			delete idToLawncipherTranslationIndexes[colName];
+			delete lawncipherToIdTranslationIndexes[colName];
 		}
 
 		db.close();
