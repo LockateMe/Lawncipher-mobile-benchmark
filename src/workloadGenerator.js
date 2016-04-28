@@ -1,4 +1,6 @@
 function Workload(dbWrappers, _workloadOptions, name){
+	if (!sodium) throw new Error('libsodium cannot be found. Ensure that you are loading libsodium before loading the benchmarking code');
+
 	var from_string = sodium.from_string, to_string = sodium.to_string;
 	var from_base64 = sodium.from_base64, to_base64 = sodium.to_base64;
 	var from_hex = sodium.from_hex, to_hex = sodium.to_hex;
@@ -6,7 +8,7 @@ function Workload(dbWrappers, _workloadOptions, name){
 	checkDBWrapperArray(dbWrappers);
 
 	//Declaring workload arrays
-	var workloadData, workloadQueries;
+	var workloadData, workloadOperations, workloadAttachments;
 	var workloadCounters = {
 		read: 0,
 		update: 0,
@@ -53,7 +55,8 @@ function Workload(dbWrappers, _workloadOptions, name){
 
 	//Sizing/allocating workload arrays
 	workloadData = new Array(workloadOptions.docCount);
-	workloadQueries = new Array(workloadOptions.operationCount);
+	workloadAttachments = new Array(workloadOptions.useAttachments ? workloadOptions.docCount : 0);
+	workloadOperations = new Array(workloadOptions.operationCount);
 
 	//Checking proportions integrity
 	var totalProportions =
@@ -186,7 +189,7 @@ function Workload(dbWrappers, _workloadOptions, name){
 		return b;
 	}
 
-	function shuffleList(a){
+	function shuffleList(a, inPlace){
 		if (!(Array.isArray(a) && a.length > 0)) throw new TypeError('a must be a non empty array');
 
 		var o = new Array(a.length);
@@ -203,9 +206,16 @@ function Workload(dbWrappers, _workloadOptions, name){
 			}
 		});
 
-		return o.map(function(item){
-			return item.v;
-		});
+		if (inPlace){
+			o.forEach(function(item, index){
+				a[index] = item;
+			})
+			return a;
+		} else {
+			return o.map(function(item){
+				return item.v;
+			});
+		}
 	}
 
 	function randomListItem(l){
@@ -216,11 +226,43 @@ function Workload(dbWrappers, _workloadOptions, name){
 		return l[itemIndex];
 	}
 
+	function getNextOperationType(opIndex){
+		var nOperations = opIndex + 1; //The n-th operation = its index in the operations array + 1
+		var propDistances = {
+			read: workloadOptions.proportions.read - workloadCounters.read / nOperations,
+			update: workloadOptions.proportions.update - workloadCounters.update / nOperations,
+			insert: workloadOptions.proportions.insert - workloadCounters.insert / nOperations,
+			query: workloadOptions.proportions.query - workloadCounters.query / nOperations
+		};
+
+		var furthestFromTarget = Number.MIN_VALUE;
+		var furthestFromTargetAttr;
+		for (var p in propDistances){
+			//Defaults to an operation type. Just in case...
+			if (!furthestFromTargetAttr) furthestFromTargetAttr = p;
+
+			var currentProp = propDistances[p];
+			if (currentProp > furthestFromTarget){
+				furthestFromTarget = currentProp;
+				furthestFromTargetAttr = p;
+			}
+		}
+
+		var nextOpType = furthestFromTargetAttr;
+		workloadCounters[nextOpType]++;
+
+		return nextOpType;
+	}
+
 	/*
 	* END : DATA GENERATION FUNCTIONS
 	*/
 
-	function generateFunctionFactory(workloadOptions, dataList, attachmentsList){
+	/*
+	* START : WORKLOAD FUNCTIONS GENERATION
+	*/
+
+	/*function generateFunctionFactory(workloadOptions, dataList, attachmentsList){
 		return function(dbWrappers, cb){
 			checkDBWrapperArray(dbWrappers);
 			if (typeof cb != 'function') throw new TypeError('cb must be a function');
@@ -257,9 +299,85 @@ function Workload(dbWrappers, _workloadOptions, name){
 			//Start the bulk insertion loop
 			bulkSaveOne();
 		}
-	}
+	}*/
 
-	function runnerFunctionFactory(dataList, queriesList){
+	var generateFunction = function(cb){
+		if (!cb) throw 'Missing callback';
+
+		var aotInsertProportion =  1 - workloadOptions.proportions.insert;
+		var aotDocNumber = Math.round(aotInsertProportion * workloadOptions.docCount);
+
+		for (var i = 0; i < aotDocNumber; i++){
+			dataList[i] = generateDoc();
+		}
+
+		var bulkSaveIndex = 0;
+
+		function bulkSaveOne(){
+			dbWrappers[bulkSaveIndex].bulkSave(dataList, attachmentsList, function(err, docsIds){
+				if (err){
+					cb(err);
+					return;
+				}
+
+				bulkSaveNext();
+			});
+		}
+
+		function bulkSaveNext(){
+			bulkSaveIndex++;
+			if (bulkSaveIndex == dbWrappers.length){
+				cb();
+			} else {
+				bulkSaveOne();
+			}
+		}
+
+		//Start the bulk insertion loop
+		bulkSaveOne();
+	};
+
+	var runnerFunction = function(cb){
+		if (!cb) throw 'Missing callback';
+
+		var gErrors = {}; //Global errors object
+		var results = {}; //Global performance results object
+		var wrapperIndex = 0;
+
+		//Prepare queries and what not.
+		var numQueries = operationsList.length;
+		for (var i = 0; i < numQueries; i++){
+			var nextOpType = getNextOperationType(i);
+
+			if (nextOpType == 'read'){
+
+			} else if (nextOpType == 'update'){
+
+			} else if (nextOpType == 'insert'){
+
+			} else if (nextOpType == 'query'){
+
+			} else {
+				throw new Error('Invalid operation type: ' + nextOpType);
+			}
+		}
+		//Generate missing docs (regarding insert proportion)
+		//Generate queries based upon existing docs, that are randomly selected from dataList
+
+		//Ensuring proportions balance : current proportions are recalculated at each iteration
+		//The type of operation to be scheduled/done in the current iteration is the type that has it's current proportion that furthest from its target proportion
+
+		function runOnce(){
+			var bChrono = new Chrono();
+
+		}
+
+		function nextDb(){
+			wrapperIndex++;
+		}
+	};
+
+	/*function runnerFunctionFactory(workloadOptions, dataList, attachmentsList, operationsList){
 		return function(dbWrappers, cb){
 
 			var gErrors = {}; //Global errors object
@@ -267,6 +385,22 @@ function Workload(dbWrappers, _workloadOptions, name){
 			var wrapperIndex = 0;
 
 			//Prepare queries and what not.
+			var numQueries = operationsList.length;
+			for (var i = 0; i < numQueries; i++){
+				var nextOpType = getNextOperationType(i);
+
+				if (nextOpType == 'read'){
+
+				} else if (nextOpType == 'update'){
+
+				} else if (nextOpType == 'insert'){
+
+				} else if (nextOpType == 'query'){
+
+				} else {
+					throw new Error('Invalid operation type: ' + nextOpType);
+				}
+			}
 			//Generate missing docs (regarding insert proportion)
 			//Generate queries based upon existing docs, that are randomly selected from dataList
 
@@ -274,6 +408,7 @@ function Workload(dbWrappers, _workloadOptions, name){
 			//The type of operation to be scheduled/done in the current iteration is the type that has it's current proportion that furthest from its target proportion
 
 			function runOnce(){
+				var bChrono = new Chrono();
 
 			}
 
@@ -282,5 +417,32 @@ function Workload(dbWrappers, _workloadOptions, name){
 			}
 
 		}
-	}
+	}*/
+
+	/*
+	* END : WORKLOAD FUNCTIONS GENERATION
+	*/
+
+	var generatorFunction = generateFunctionFactory(workloadOptions, workloadData, workloadAttachments)
+	var runnerFunction = runnerFunctionFactory(workloadOptions, workloadData, workloadAttachments, workloadOperations);
+
+	this.run = function(callback){
+		if (typeof callback != 'function') throw new TypeError('callback must be a function');
+
+		var results = {};
+		var runIndex = 0;
+
+		generatorFunction(dbWrappers, function(err){
+			if (err){
+				callback(err);
+				return;
+			}
+
+			runnerFunction(dbWrappers, callback);
+		});
+	};
+
+	this.name = function(){
+		return workloadOptions.name;
+	};
 }
