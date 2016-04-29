@@ -1,13 +1,13 @@
 (function(BenchmarkWorkloads){
 
-	BenchmarkWorkloads.readWrite = {
+	BenchmarkWorkloads.mixed = {
 		proportions: {
-			read: .5,
-			update: .5,
-			insert: 0,
+			read: .65,
+			insert: .1,
+			update: .25,
 			query: 0
 		},
-		name: 'Read-Write'
+		name: 'Mixed'
 	};
 
 })(window.BenchmarkWorkloads = window.BenchmarkWorkloads || {});
