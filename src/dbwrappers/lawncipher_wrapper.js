@@ -103,7 +103,7 @@
 								if (limit && !(typeof limit == 'number' && Math.floor(limit) == limit && limit > 0)) throw new TypeError('when defined, limit must be a strictly positive integer number');
 							}
 
-							if (idToLawncipher && typeof q == 'string') q = idToLawncipher[q];
+							if (idToLawncipher && typeof q == 'string') q = idToLawncipher[q] || q;
 
 							c.find(q, cb, limit);
 						}
@@ -126,7 +126,7 @@
 								if (typeof cb != 'function') throw new TypeError('cb must be a function');
 							}
 
-							if (idToLawncipher && typeof q == 'string') q = idToLawncipher[q];
+							if (idToLawncipher && typeof q == 'string') q = idToLawncipher[q] || q;
 
 							c.findOne(q, cb);
 						}
@@ -231,7 +231,7 @@
 							}
 
 							if (idToLawncipher && typeof query == 'string'){ //Translate id to lawncipherId
-								query = idToLawncipher[query];
+								query = idToLawncipher[query] || query;
 							}
 
 							c.update(query, newAttributes || newAttachment, cb, indexOnly);
@@ -258,7 +258,7 @@
 							}
 
 							if (idToLawncipher && typeof q == 'string'){
-								q = idToLawncipher[q];
+								q = idToLawncipher[q] || q;
 							}
 
 							c.remove(q, cb);
