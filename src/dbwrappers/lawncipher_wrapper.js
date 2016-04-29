@@ -8,7 +8,6 @@
 	var loadedCollections = {};
 	var loadedWrappers = {};
 
-	//In case an indexModel is used, these will be redundant
 	var idToLawncipherTranslationIndexes = {};
 	var lawncipherToIdTranslationIndexes = {};
 
@@ -21,6 +20,13 @@
 		if (indexModel && typeof indexModel != 'object') throw new TypeError('when defined, indexModel must be an object');
 
 		forceTypeTests = typeof window.forceTypeTests == 'boolean' ? window.forceTypeTests : true;
+
+		//In case an indexModel is used, translastion indices will be redundant
+		if (!indexModel){
+			//Make these defined only if no indexModel is used (and hence id translation is necessary)
+			idToLawncipherTranslationIndexes[dbName] = {};
+			lawncipherToIdTranslationIndexes[dbName] = {};
+		}
 
 		if (!fs) initFS();
 		else initDB();
@@ -76,7 +82,7 @@
 								if (typeof cb != 'function') throw new TypeError('cb must be a function');
 							}
 
-							c.findOne(idToLawncipher[id], cb);
+							c.findOne((idToLawncipher && idToLawncipher[id]) || id, cb);
 						}
 					}
 
@@ -97,7 +103,7 @@
 								if (limit && !(typeof limit == 'number' && Math.floor(limit) == limit && limit > 0)) throw new TypeError('when defined, limit must be a strictly positive integer number');
 							}
 
-							if (typeof q == 'string') q = idToLawncipher[q];
+							if (idToLawncipher && typeof q == 'string') q = idToLawncipher[q];
 
 							c.find(q, cb, limit);
 						}
@@ -120,7 +126,7 @@
 								if (typeof cb != 'function') throw new TypeError('cb must be a function');
 							}
 
-							if (typeof q == 'string') q = idToLawncipher[q];
+							if (idToLawncipher && typeof q == 'string') q = idToLawncipher[q];
 
 							c.findOne(q, cb);
 						}
@@ -150,7 +156,7 @@
 									return;
 								}
 
-								if (doc){
+								if (doc && lawncipherToId && idToLawncipher){
 									lawncipherToId[docId] = doc._id;
 									idToLawncipher[doc._id] = docId;
 								}
@@ -188,7 +194,7 @@
 
 								var translatedIds = new Array(docIds.length);
 
-								if (docs && docs.length > 0){
+								if (docs && docs.length > 0 && idToLawncipher && lawncipherToId){
 									docs.forEach(function(currentDoc, index){
 										lawncipherToId[docIds[index]] = currentDoc._id;
 										idToLawncipher[currentDoc._id] = docIds[index];
@@ -224,7 +230,7 @@
 								if (typeof cb != 'function') throw new TypeError('cb must be a function');
 							}
 
-							if (typeof query == 'string'){ //Translate id to lawncipherId
+							if (idToLawncipher && typeof query == 'string'){ //Translate id to lawncipherId
 								query = idToLawncipher[query];
 							}
 
@@ -251,7 +257,7 @@
 								if (typeof cb != 'function') throw new TypeError('cb must be a function');
 							}
 
-							if (typeof q == 'string'){
+							if (idToLawncipher && typeof q == 'string'){
 								q = idToLawncipher[q];
 							}
 
@@ -281,8 +287,8 @@
 								}
 
 								delete loadedCollections[dbName];
-								delete idToLawncipherTranslationIndexes[dbName];
-								delete lawncipherToIdTranslationIndexes[dbName];
+								if (idToLawncipherTranslationIndexes[dbName]) delete idToLawncipherTranslationIndexes[dbName];
+								if (lawncipherToIdTranslationIndexes[dbName]) delete lawncipherToIdTranslationIndexes[dbName];
 
 								cb();
 							});
@@ -304,9 +310,6 @@
 							cb();
 						});
 					};*/
-
-					idToLawncipherTranslationIndexes[dbName] = {};
-					lawncipherToIdTranslationIndexes[dbName] = {};
 
 					var lcWrapper = new DBWrapper(
 						'Lawncipher',
