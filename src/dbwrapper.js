@@ -97,10 +97,14 @@ function DBWrapper(dbType, /*setupFn,*/ getFn, findFn, findOneFn, saveFn, bulkSa
 	this.rawDb = rawDbObj;
 }
 
-function checkDBWrapperArray(a, name){
+function checkDBWrapperArray(a, name, allowNull){
 	name = name || 'dbWrappers';
-	if (!(Array.isArray(a) && a.length > 0)) throw new TypeError(name + ' must be a non-empty array');
+	if (!(Array.isArray(a) && a.length > 0)){
+		if (allowNull) return [];
+		else throw new TypeError(name + ' must be a non-empty array');
+	}
 	a.forEach(function(item, index){
 		if (!(item instanceof DBWrapper)) throw new TypeError(name + '[' + index + '] must be an instance of DBWrapper');
 	});
+	return a;
 }
