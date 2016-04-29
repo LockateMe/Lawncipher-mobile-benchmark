@@ -27,6 +27,8 @@ function Workload(dbWrappers, _workloadOptions, name){
 		insertData: true,
 		useAttachments: false,
 		useIndexModel: false,
+		indexModel: null, //An object (when defined)
+		queryAttributes: null, //An array (when defined)
 		shuffleWorkloads: true,
 		proportions: {
 			read: 0, //Read by Id
@@ -36,8 +38,6 @@ function Workload(dbWrappers, _workloadOptions, name){
 		},
 		name: typeof name == 'string' ? name : 'Workload'
 	};
-
-	/// DO NOT USE ARRAY.PUSH
 
 	/*
 	Insert data can be determined by the insert proportion...
@@ -306,9 +306,20 @@ function Workload(dbWrappers, _workloadOptions, name){
 		if (!cb) throw 'Missing callback';
 
 		var aotInsertProportion =  1 - workloadOptions.proportions.insert;
-		var aotDocNumber = Math.round(aotInsertProportion * workloadOptions.docCount);
+		var inWorkloadInserts = workloadOptions.proportions.insert * workloadOptions.operationCount;
+		var aotInserts = workloadOptions.docCount - inWorkloadInserts;
+		/*
+			Which one do we use? Not in all cases will have docCount == operationCount
+			We take the minimum between the 2 numbers, to ensure that insert operations do not "monopolize" the workload
+		*/
+		// THIS SEEMS TO BE A BAD IDEA. THE SOLUTION IS IN THE CODE ABOVE THIS COMMENTED SECTION
+		/*
+		var aotDocNumberByDocCount = Math.round(aotInsertProportion * workloadOptions.docCount);
+		var aotDocNumberByOpCount = Math.round(aotInsertProportion * workloadOptions.operationCount);
+		var aotDocNumber = Math.min(aotDocNumberByDocCount, aotDocNumberByOpCount);
+		*/
 
-		for (var i = 0; i < aotDocNumber; i++){
+		for (var i = 0; i < aotInserts; i++){
 			dataList[i] = generateDoc();
 		}
 
