@@ -26,6 +26,7 @@ function Workload(dbWrappers, _workloadOptions, name){
 		generateId: true,
 		insertData: true,
 		useAttachments: false,
+		useIndexModel: false,
 		shuffleWorkloads: true,
 		proportions: {
 			read: 0, //Read by Id
@@ -69,7 +70,7 @@ function Workload(dbWrappers, _workloadOptions, name){
 		throw new TypeError('Invalid proportions sum:' + totalProportions);
 	}
 
-	if (!(workloadOptions.fieldNames && workloadOptions.fieldNames.length > 0)){
+	if (workloadOptions.useIndexModel && !(workloadOptions.fieldNames && workloadOptions.fieldNames.length > 0)){
 		var indexModel = {};
 		var fieldNames = new Array(workloadOptions.fieldCount);
 		var fieldNamesCount = 0;
@@ -223,7 +224,7 @@ function Workload(dbWrappers, _workloadOptions, name){
 		if (l.length < 2) throw new TypeError('l must contain at least 2 items');
 
 		var itemIndex = Math.floor(Math.random() * l.length);
-		return l[itemIndex];
+		return l[itemIndex] || randomListItem(l); //Repeat recursively until the selected item is not null or undefined
 	}
 
 	function getNextOperationType(opIndex){
@@ -314,7 +315,7 @@ function Workload(dbWrappers, _workloadOptions, name){
 		var bulkSaveIndex = 0;
 
 		function bulkSaveOne(){
-			dbWrappers[bulkSaveIndex].bulkSave(dataList, attachmentsList, function(err, docsIds){
+			dbWrappers[bulkSaveIndex].bulkSave(workloadData, workloadAttachments, function(err, docsIds){
 				if (err){
 					cb(err);
 					return;
@@ -345,21 +346,24 @@ function Workload(dbWrappers, _workloadOptions, name){
 		var wrapperIndex = 0;
 
 		//Prepare queries and what not.
-		var numQueries = operationsList.length;
-		for (var i = 0; i < numQueries; i++){
+		var numOperations = workloadOperations.length;
+		for (var i = 0; i < numOperations; i++){
 			var nextOpType = getNextOperationType(i);
 
+			var opParams = {type: nextOpType};
 			if (nextOpType == 'read'){
-
+				var randDoc = randomListItem(workloadData);
+				//Select by id, but wait...
 			} else if (nextOpType == 'update'){
 
 			} else if (nextOpType == 'insert'){
-
+				if (workloadOptions.useAttachments) opParams.attachment = generateBlob();
+				else opParams.doc = generateDoc();
 			} else if (nextOpType == 'query'){
 
-			} else {
-				throw new Error('Invalid operation type: ' + nextOpType);
-			}
+			} else throw new Error('Invalid operation type: ' + nextOpType);
+
+			workloadOperations[i] = opParams;
 		}
 		//Generate missing docs (regarding insert proportion)
 		//Generate queries based upon existing docs, that are randomly selected from dataList
@@ -422,9 +426,6 @@ function Workload(dbWrappers, _workloadOptions, name){
 	/*
 	* END : WORKLOAD FUNCTIONS GENERATION
 	*/
-
-	var generatorFunction = generateFunctionFactory(workloadOptions, workloadData, workloadAttachments)
-	var runnerFunction = runnerFunctionFactory(workloadOptions, workloadData, workloadAttachments, workloadOperations);
 
 	this.run = function(callback){
 		if (typeof callback != 'function') throw new TypeError('callback must be a function');
