@@ -1,4 +1,4 @@
-function Workload(dbWrappers, _workloadOptions, name){
+function Workload(dbWrappers, _workloadOptions, loadCallback){
 	if (!sodium) throw new Error('libsodium cannot be found. Ensure that you are loading libsodium before loading the benchmarking code');
 
 	var from_string = sodium.from_string, to_string = sodium.to_string;
@@ -17,6 +17,7 @@ function Workload(dbWrappers, _workloadOptions, name){
 	};
 
 	if (_workloadOptions && typeof _workloadOptions != 'object') throw new TypeError('when defined, _workloadOptions must be an object');
+	if (typeof loadCallback != 'function') throw new TypeError('loadCallback must be a function');
 
 	var workloadOptionsDefaults = {
 		fieldCount: 10,
@@ -36,13 +37,8 @@ function Workload(dbWrappers, _workloadOptions, name){
 			insert: 0, //Insert by id or query?
 			query: 0 //Advanced/compound search query
 		},
-		name: typeof name == 'string' ? name : 'Workload'
+		name: 'Unnamed Workload'
 	};
-
-	/*
-	Insert data can be determined by the insert proportion...
-	Let's set r = insertProportion. 1-r will be the proportion of data to be inserted ahead of time
-	*/
 
 	var workloadOptions = {};
 	//Shallow copy of _workloadOptions
