@@ -38,7 +38,48 @@
     <body>
         <div id="app">
             <h1>Mobile DBs benchmark</h1>
-
+            <div id="workloadSettings">
+                <label>Workload:</label>
+                <select id="workloadSelect">
+                    <option value="readWrite">
+                        Read-write
+                    </option>
+                    <option value="mostlyRead">
+                        Mostly read
+                    </option>
+                    <option value="mostlyInsert">
+                        Mostly insert
+                    </option>
+                    <option value="mixed">
+                        Mixed workload
+                    </option>
+                    <option value="collectionSizeStress">
+                        Collection size stress test
+                    </option>
+                    <option value="blobMass">
+                        Mass blob collection
+                    </option>
+                </select>
+                <label>PouchDB adapter</label>
+                <select id="adapterSelect">
+                    <option value="websql">
+                        WebSQL/SQLite
+                    </option>
+                    <option value="idb">
+                        IndexedDB
+                    </option>
+                </select>
+                <label>Use indexModel?</label>
+                <select>
+                    <option value="use">
+                        Yes
+                    </option>
+                    <option value="dontuse">
+                        No
+                    </option>
+                </select>
+                <button id="workloadStart">Start !</button>
+            </div>
         </div>
         <script type="text/javascript" src="cordova.js"></script>
         <script type="text/javascript" src="js/sodium.js"></script>
