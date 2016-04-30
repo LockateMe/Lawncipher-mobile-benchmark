@@ -5,7 +5,7 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 	var from_base64 = sodium.from_base64, to_base64 = sodium.to_base64;
 	var from_hex = sodium.from_hex, to_hex = sodium.to_hex;
 
-	checkDBWrapperArray(dbWrappers);
+	dbWrappers = checkDBWrapperArray(dbWrappers, undefined, true);
 
 	//Declaring workload arrays
 	var workloadData, workloadOperations, workloadAttachments;
@@ -15,6 +15,9 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 		insert: 0,
 		query: 0
 	};
+
+	var drivers = ['Lawncipher', 'Pouch'];
+	var initCompleted = false;
 
 	if (_workloadOptions && typeof _workloadOptions != 'object') throw new TypeError('when defined, _workloadOptions must be an object');
 	if (typeof loadCallback != 'function') throw new TypeError('loadCallback must be a function');
@@ -31,6 +34,7 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 		indexModel: null, //An object (when defined)
 		queryAttributes: null, //An array (when defined)
 		shuffleWorkloads: true,
+		pouchAdapter: 'websql',
 		proportions: {
 			read: 0, //Read by Id
 			update: 0, //Update by id or query?
@@ -50,49 +54,140 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 		workloadOptions[propName] = workloadOptions[propName] || workloadOptionsDefaults[propName];
 	}
 
-	//Sizing/allocating workload arrays
-	workloadData = new Array(workloadOptions.docCount);
-	workloadAttachments = new Array(workloadOptions.useAttachments ? workloadOptions.docCount : 0);
-	workloadOperations = new Array(workloadOptions.operationCount);
+	var totalProportions;
+	var indexModel;
+	var fieldNames, fieldNamesCount, fieldNameLength;
 
-	//Checking proportions integrity
-	var totalProportions =
-		workloadOptions.proportions.read +
-		workloadOptions.proportions.update +
-		workloadOptions.proportions.insert +
-		workloadOptions.proportions.query;
+	function initWorkload(){
+		//Sizing/allocating workload arrays
+		workloadData = new Array(workloadOptions.docCount);
+		workloadAttachments = new Array(workloadOptions.useAttachments ? workloadOptions.docCount : 0);
+		workloadOperations = new Array(workloadOptions.operationCount);
 
-	if (totalProportions != 1){
-		throw new TypeError('Invalid proportions sum:' + totalProportions);
+		//Checking proportions integrity
+		totalProportions =
+			workloadOptions.proportions.read +
+			workloadOptions.proportions.update +
+			workloadOptions.proportions.insert +
+			workloadOptions.proportions.query;
+
+		if (totalProportions != 1){
+			throw new TypeError('Invalid proportions sum:' + totalProportions);
+		}
+
+		if (workloadOptions.useIndexModel && !(workloadOptions.fieldNames && workloadOptions.fieldNames.length > 0)){
+			indexModel = {};
+			fieldNames = new Array(workloadOptions.fieldCount);
+			fieldNamesCount = 0;
+
+			fieldNameLength = Math.ceil(Math.log2(workloadOptions.fieldCount)) + 1;
+
+			if (workloadOptions.generateId){
+				fieldNames[fieldNamesCount] = '_id';
+				fieldNamesCount++;
+			}
+
+			while (fieldNamesCount < workloadOptions.fieldCount){
+				fieldNames[fieldNamesCount] = generateString(fieldNameLength);
+				fieldNamesCount++;
+			}
+
+			fieldNames.forEach(function(item){
+				if (item == '_id'){
+					indexModel['_id'] = {id: true, type: 'string'};
+				} else {
+					indexModel[item] = 'string';
+				}
+			});
+
+			workloadOptions.fieldNames = fieldNames;
+			workloadOptions.indexModel = indexModel;
+		}
 	}
 
-	if (workloadOptions.useIndexModel && !(workloadOptions.fieldNames && workloadOptions.fieldNames.length > 0)){
-		var indexModel = {};
-		var fieldNames = new Array(workloadOptions.fieldCount);
-		var fieldNamesCount = 0;
+	function initDrivers(_cb){
+		var initIndex = 0;
 
-		var fieldNameLength = Math.ceil(Math.log2(workloadOptions.fieldCount)) + 1;
-
-		if (workloadOptions.generateId){
-			fieldNames[fieldNamesCount] = '_id';
-			fieldNamesCount++;
-		}
-
-		while (fieldNamesCount < workloadOptions.fieldCount){
-			fieldNames[fieldNamesCount] = generateString(fieldNameLength);
-			fieldNamesCount++;
-		}
-
-		fieldNames.forEach(function(item){
-			if (item == '_id'){
-				indexModel['_id'] = {id: true, type: 'string'};
-			} else {
-				indexModel[item] = 'string';
+		function initOne(){
+			var currentDb = drivers[initIndex];
+			var currentInitFnName = 'init' + currentDb;
+			var thirdParam;
+			if (currentDb == 'Pouch'){
+				thirdParam = workloadOptions.pouchAdapter;
+			} else if (currentDb == 'Lawncipher'){
+				thirdParam = workloadOptions.indexModel;
 			}
-		});
 
-		workloadOptions.fieldNames = fieldNames;
-		workloadOptions.indexModel = indexModel;
+			LawncipherDrivers[currentInitFnName](workloadOptions.name, function(err, w){
+				if (err){
+					_cb(err);
+					return;
+				}
+
+				dbWrappers.push(w);
+
+				next();
+			}, thirdParam);
+		}
+
+		function next(){
+			initIndex++;
+			if (initIndex == drivers.length){
+				_cb();
+			} else {
+				initOne();
+			}
+		}
+
+		initOne();
+	}
+
+	function cleanUp(_cb){
+		var clearIndex = 0;
+
+		function cleanOne(){
+			var currentDb = drivers[clearIndex];
+			var currentClearFnName = 'clear' + currentDb;
+
+			LawncipherDrivers[currentClearFnName](function(err){
+				if (err){
+					_cb(err);
+					return;
+				}
+
+				next();
+			});
+		}
+
+		function next(){
+			clearIndex++;
+
+			if (clearIndex == drivers.length){
+				_cb();
+			} else {
+				cleanOne();
+			}
+		}
+
+		cleanOne();
+	}
+
+	if (dbWrappers.length == 0){
+		initWorkload();
+		initDrivers(function(err){
+			if (err){
+				loadCallback(err);
+				return;
+			}
+
+			initCompleted = true;
+			loadCallback();
+		});
+	} else {
+		initWorkload();
+
+		initCompleted = true;
+		loadCallback();
 	}
 
 	/*
@@ -100,7 +195,7 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 	*/
 
 	function generateDoc(){
-		var genFieldsCount = 0;
+		//var genFieldsCount = 0;
 
 		var d = {};
 
@@ -206,7 +301,7 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 		if (inPlace){
 			o.forEach(function(item, index){
 				a[index] = item;
-			})
+			});
 			return a;
 		} else {
 			return o.map(function(item){
@@ -381,10 +476,41 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 		function runOnce(){
 			var bChrono = new Chrono();
 
+			var cWrapper = dbWrappers[wrapperIndex];
+
+			var opIndex = 0;
+
+			function opOne(){
+
+			}
+
+			function nextOp(){
+				opIndex++;
+				if (opIndex == workloadOperations.length){
+					var wDuration = bChrono.stop();
+					results[dbWrappers[wrapperIndex].dbType] = wDuration;
+
+					nextDb();
+				} else {
+					/*
+					if (opIndex % 100 == 0) setTimeout(opOne, 0);
+					else opOne();
+					*/
+					opOne();
+				}
+			}
+
+			bChrono.start();
+			opOne();
 		}
 
 		function nextDb(){
 			wrapperIndex++;
+			if (wrapperIndex == dbWrappers.length){
+				cb(undefined, results);
+			} else {
+				runOnce();
+			}
 		}
 	};
 
@@ -435,10 +561,8 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 	*/
 
 	this.run = function(callback){
+		if (!initCompleted) throw new Error('The workload init procedure is not complete yet');
 		if (typeof callback != 'function') throw new TypeError('callback must be a function');
-
-		var results = {};
-		var runIndex = 0;
 
 		generatorFunction(dbWrappers, function(err){
 			if (err){
@@ -446,7 +570,11 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 				return;
 			}
 
-			runnerFunction(dbWrappers, callback);
+			runnerFunction(dbWrappers, function(r_err, results){
+				cleanUp(function(c_err){
+					callback(r_err || c_err, results);
+				});
+			});
 		});
 	};
 
