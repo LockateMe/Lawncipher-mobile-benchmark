@@ -5,15 +5,17 @@ copy-bower-components: bower_components/lawncipher bower_components/libsodium.js
 	cp bower_components/lawncipher/lawncipher.js www/js/
 	cp bower_components/pouchdb/dist/pouchdb.min.js www/js/pouchdb.js
 	cp bower_components/libsodium.js/dist/browsers/combined/sodium.min.js www/js/sodium.js
+	# cp bower_components/ratchet/dist/js/ratchet.min.js www/js/ratchet.js
+	# cp bower_components/ratchet/dist/css/
 
 bower_components/lawncipher:
-	bower install lawncipher
+	bower install
 
 bower_components/libsodium.js:
-	bower install libsodium.js
+	bower install
 
 bower_components/pouchdb:
-	bower install pouchdb
+	bower install
 
 plugins/cordova-plugin-file-node-like:
 	cordova plugin add cordova-plugin-file-node-like
