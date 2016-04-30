@@ -1,15 +1,16 @@
 (function(BenchmarkWorkloads){
 
-	BenchmarkWorkloads.collectionSizeStress = {
+	BenchmarkWorkloads.blobMass = {
 		proportions: {
-			read: .2,
-			update: .1,
-			insert: .1,
-			query: .4
+			read: .9,
+			update: .05,
+			insert: .05,
+			query: 0
 		},
 		docCount: 10000,
 		operationCount: 250,
-		name: 'Collection size stress'
+		useAttachments: true,
+		name: 'Massive blob storage'
 	}
 
 })(window.BenchmarkWorkloads = window.BenchmarkWorkloads || {});
