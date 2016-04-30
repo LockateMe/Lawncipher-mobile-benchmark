@@ -3,6 +3,9 @@
 		<meta charset="utf-8">
 		<title>A page with PouchDB</title>
 		<script src="bower_components/pouchdb/dist/pouchdb.min.js"></script>
+		<script type="text/javascript">
+			var cb = function(err, results){if (err) throw err; console.log(JSON.stringify(results));};
+		</script>
 	</head>
 	<body>
 	</body>
