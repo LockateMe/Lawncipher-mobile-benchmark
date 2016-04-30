@@ -71,7 +71,7 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 		var fieldNames = new Array(workloadOptions.fieldCount);
 		var fieldNamesCount = 0;
 
-		var fieldNameLength = Math.ceil(Math.log2(workloadOptions.fieldCount)) * 2;
+		var fieldNameLength = Math.ceil(Math.log2(workloadOptions.fieldCount)) + 1;
 
 		if (workloadOptions.generateId){
 			fieldNames[fieldNamesCount] = '_id';
