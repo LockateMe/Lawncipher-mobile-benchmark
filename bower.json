@@ -1,0 +1,30 @@
+{
+  "name": "Lawncipher-mobile-benchmark",
+  "version": "1.0.0",
+  "authors": [
+    "Ahmad Benmrad <contact@lockate.me>"
+  ],
+  "description": "A benchmarking app, that tests Lawncipher against PouchDB and CouchBase Lite inside Cordova",
+  "keywords": [
+    "database",
+    "nosql",
+    "storage",
+    "crypto",
+    "security",
+    "cordova"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/LockateMe/Lawncipher-mobile-benchmark",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "lawncipher": "~1.0.3",
+    "pouchdb": "~5.3.1",
+    "ratchet": "~2.0.2"
+  }
+}
