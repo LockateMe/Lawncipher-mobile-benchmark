@@ -410,8 +410,14 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 		var aotDocNumber = Math.min(aotDocNumberByDocCount, aotDocNumberByOpCount);
 		*/
 
-		for (var i = 0; i < aotInserts; i++){
-			dataList[i] = generateDoc();
+		if (workloadOptions.useAttachments){
+			for (var i = 0; i < aotInserts; i++){
+				workloadAttachments[i] = generateBlob();
+			}
+		} else {
+			for (var i = 0; i < aotInserts; i++){
+				workloadData[i] = generateDoc();
+			}
 		}
 
 		var bulkSaveIndex = 0;
