@@ -46,7 +46,7 @@ function DBWrapper(dbType, /*setupFn,*/ getFn, findFn, findOneFn, saveFn, bulkSa
 	* Save a single document
 	* @function
 	* @param {Object} document
-	* @param {Uint8Array|Object|String} attachement
+	* @param {Uint8Array|Object|String} attachment
 	* @param {Function} callback(err, docId)
 	*/
 	this.save = saveFn;
@@ -55,7 +55,7 @@ function DBWrapper(dbType, /*setupFn,*/ getFn, findFn, findOneFn, saveFn, bulkSa
 	* Save documents, in bulk
 	* @function
 	* @param {Object[]} documents
-	* @param {Uint8Array|Object|String[]} attachements
+	* @param {Uint8Array|Object|String[]} attachments
 	* @param {Function} callback(err, docIds)
 	*/
 	this.bulkSave = bulkSaveFn;
@@ -65,7 +65,7 @@ function DBWrapper(dbType, /*setupFn,*/ getFn, findFn, findOneFn, saveFn, bulkSa
 	* @function
 	* @param {Object|String} query|docId
 	* @param {Object} newAttributes
-	* @param {Uint8Array|Object|String} newAttachement
+	* @param {Uint8Array|Object|String} newAttachment
 	* @param {Function} callback(err, updatedCount)
 	*/
 	this.update = updateFn;

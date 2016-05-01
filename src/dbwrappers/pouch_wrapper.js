@@ -404,9 +404,9 @@
 							}
 						});
 					} else {
-						var inlineAttachement = prepareInlineAttachment(newAttachment);
+						var inlineAttachment = prepareInlineAttachment(newAttachment);
 						docs.forEach(function(currentDoc){
-							currentDoc._attachments = inlineAttachement;
+							currentDoc._attachments = inlineAttachment;
 						});
 					}
 
