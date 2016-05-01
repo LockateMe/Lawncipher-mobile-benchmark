@@ -46,9 +46,10 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 
 	var workloadOptions = {};
 	//Shallow copy of _workloadOptions
-	for (var propName in _workloadOptions){
+	workloadOptions = shallowCopy(_workloadOptions, workloadOptions);
+	/*for (var propName in _workloadOptions){
 		workloadOptions[propName] = _workloadOptions[propName];
-	}
+	}*/
 	//Using workloadOptionsDefaults for undefined mandatory parameters
 	for (var propName in workloadOptionsDefaults){
 		workloadOptions[propName] = workloadOptions[propName] || workloadOptionsDefaults[propName];
@@ -460,8 +461,8 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 
 			var opParams = {type: nextOpType};
 			if (nextOpType == 'read'){
-				var randDoc = randomListItem(workloadData);
-				//Select by id, but wait...
+				var randDocId = randomListItem(workloadData)._id;
+
 			} else if (nextOpType == 'update'){
 
 			} else if (nextOpType == 'insert'){
@@ -487,10 +488,66 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 			var opIndex = 0;
 
 			function opOne(){
+				var opParams = workloadOperations[opIndex];
 
+				if (opParams.type == 'read'){
+					cWrapper.get(opParams.docId, function(err, foundDoc){
+						if (err){
+							nextOp(err);
+							return;
+						}
+
+						if (!foundDoc){
+							console.log('Finding no doc matching: ' + opParams.docId);
+						}
+
+						nextOp();
+					});
+				} else if (opParams.type == 'update'){
+					cWrapper.update(opParams.query, opParams.newAttributes, opParams.newAttachment, function(err, updatedCount){
+						if (err){
+							nextOp(err);
+							return;
+						}
+
+						if (updatedCount == 0){
+							console.log('No doc updated with query: ' + JSON.stringify(opParams.query));
+						}
+
+						nextOp();
+					});
+				} else if (opParams.type == 'insert'){
+					cWrapper.save(opParams.doc, opParams.attachment, function(err, docId){
+						if (err){
+							nextOp(err);
+							return;
+						}
+
+						nextOp();
+					});
+				} else { //query
+					cWrapper.find(opParams.query, function(err, qResults){
+						if (err){
+							nextOp(err);
+							return;
+						}
+
+						if (qRsesults.length == 0){
+							console.log('Cannot find doc for query : ' + JSON.stringify(opParams.query));
+						}
+
+						nextOp();
+					});
+				}
 			}
 
-			function nextOp(){
+			function nextOp(err){
+				if (err){
+					gErrors[dbWrappers[wrapperIndex].dbType] = err;
+					nextDb();
+					return;
+				}
+
 				opIndex++;
 				if (opIndex == workloadOperations.length){
 					var wDuration = bChrono.stop();
@@ -513,7 +570,7 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 		function nextDb(){
 			wrapperIndex++;
 			if (wrapperIndex == dbWrappers.length){
-				cb(undefined, results);
+				cb(gErrors, results);
 			} else {
 				runOnce();
 			}
@@ -587,4 +644,13 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 	this.name = function(){
 		return workloadOptions.name;
 	};
+}
+
+function shallowCopy(source, target){
+	if (typeof source != 'object') throw new TypeError('source must be an object');
+	if (target && typeof target != 'object') throw new TypeError('when defined, target must be an object');
+
+	var c = target || {};
+	for (var a in o) c[a] = o[a];
+	return c;
 }
