@@ -70,7 +70,7 @@
                     </option>
                 </select>
                 <label>Use indexModel?</label>
-                <select>
+                <select id="useIndexModelSelect">
                     <option value="use">
                         Yes
                     </option>
@@ -78,10 +78,11 @@
                         No
                     </option>
                 </select>
-                <button id="workloadStart">Start !</button>
+                <button id="workloadStart" disabled>Start !</button>
             </div>
         </div>
         <script type="text/javascript" src="cordova.js"></script>
+        <script type="text/javascript" src="js/zepto.js"></script>
         <script type="text/javascript" src="js/sodium.js"></script>
         <script type="text/javascript" src="js/lawncipher.js"></script>
         <script type="text/javascript" src="js/pouchdb.js"></script>

@@ -21,11 +21,29 @@ module.exports = function(grunt){
 					'src/dbwrappers/lawncipher_wrapper.js',
 					'src/dbwrappers/pouch_wrapper.js',
 					'src/workload.js',
-					'src/workloads.js',
-					'src/workloadRunner.js',
+					'src/workloads/readwrite.js',
+					'src/workloads/mostlyread.js',
+					'src/workloads/mostlyinsert.js',
+					'src/workloads/mixed.js',
+					'src/workloads/collectionSizeStress.js',
+					'src/workloads/massiveBlobInsertion.js',
 					'src/index.js'
 				],
 				dest: 'www/js/benchmarks.js'
+			},
+			zepto: {
+				src: [
+					'bower_components/zepto/src/zepto.js',
+					'bower_components/zepto/src/event.js',
+					'bower_components/zepto/src/ajax.js',
+					'bower_components/zepto/src/form.js',
+					'bower_components/zepto/src/assets.js',
+					'bower_components/zepto/src/detect.js',
+					'bower_components/zepto/src/touch.js',
+					'bower_components/zepto/src/gesture.js',
+					'bower_components/zepto/src/selector.js'
+				],
+				dest: 'www/js/zepto.js'
 			}
 		},
 		jsvalidate: {

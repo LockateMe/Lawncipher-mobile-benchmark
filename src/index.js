@@ -29,13 +29,29 @@ var app = {
     // 'load', 'deviceready', 'offline', and 'online'.
     bindEvents: function() {
         document.addEventListener('deviceready', this.onDeviceReady, false);
+        $('#workloadStart').on('tap', app.onStartTap);
     },
     // deviceready Event Handler
     //
     // The scope of 'this' is the event. In order to call the 'receivedEvent'
     // function, we must explicitly call 'app.receivedEvent(...);'
     onDeviceReady: function() {
+        app.enableStart();
+    },
+    onStartTap: function(){
+        console.log('touch');
 
+        var selectedWorkloadName = $('#workloadSelect').val();
+        var selectedPouchAdapter = $('#adapterSelect').val();
+        var useIndexModel = $('#useIndexModelSelect').val();
+
+
+    },
+    enableStart: function(){
+        $('#workloadStart').removeAttr('disabled');
+    },
+    disableStart: function(){
+        $('#workloadStart').attr('disabled', 'true');
     }
 };
 
