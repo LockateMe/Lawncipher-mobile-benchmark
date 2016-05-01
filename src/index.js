@@ -45,13 +45,44 @@ var app = {
         var selectedPouchAdapter = $('#adapterSelect').val();
         var useIndexModel = $('#useIndexModelSelect').val();
 
+        var selectedWorkloadOptions = BenchmarkWorkloads[selectedWorkloadName];
+        if (!selectedWorkloadOptions){
+            console.log('Cannot find parameters for workload ' + selectedWorkloadName);
+            return;
+        }
 
+        app.disableStart();
+
+        selectedWorkloadOptions = shallowCopy(selectedWorkloadOptions);
+        selectedWorkloadOptions.useIndexModel = useIndexModel == 'use' ? true : false;
+        selectedWorkloadOptions.pouchAdapter = selectedPouchAdapter;
+
+        var w = new Workload(undefined, selectedWorkloadOptions, function(err){
+            if (err){
+                console.error(JSON.stringify(err));
+                app.enabledStart();
+                return;
+            }
+
+            w.run(function(err, results){
+                if (err){
+                    console.error(JSON.stringify(results));
+                } else {
+                    app.renderResults(results);
+                }
+
+                app.enableStart();
+            });
+        });
     },
     enableStart: function(){
         $('#workloadStart').removeAttr('disabled');
     },
     disableStart: function(){
         $('#workloadStart').attr('disabled', 'true');
+    },
+    renderResults: function(results){
+
     }
 };
 
