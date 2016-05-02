@@ -1,4 +1,4 @@
-function DBWrapper(dbType, /*setupFn,*/ getFn, findFn, findOneFn, saveFn, bulkSaveFn, updateFn, removeFn, /*saveBlobFn, bulkSaveBlobFn,*/ clearAllFn, rawDbObj){
+function DBWrapper(dbTypeS, /*setupFn,*/ getFn, findFn, findOneFn, saveFn, bulkSaveFn, updateFn, removeFn, /*saveBlobFn, bulkSaveBlobFn,*/ clearAllFn, rawDbObj){
 	if (typeof dbTypeS != 'string') throw new TypeError('dbTypeS must be a string');
 	//if (typeof setupFn != 'function') throw new TypeError('setupFn must be a function');
 	if (typeof getFn != 'function') throw new TypeError('getFn must be a function');
