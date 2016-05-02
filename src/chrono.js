@@ -7,14 +7,22 @@ function Chrono(){
 	var interval;
 	var startTime, stopTime;
 
-	var nowFn = (window.performance && window.performance.now) || Date.now;
+	var perfNow = !!(window.performance && window.performance.now);
+
+	function nowFn(){
+		if (perfNow) return window.performance.now();
+		else Date.now();
+	}
+	//if (window.performance && window.performance.now) window.performance.now.bind(window.performance);
+	//var nowFn = (window.performance && window.performance.now) || Date.now;
+	//if (typeof nowFn != 'function') console.error('typeof nowFn: ' + typeof nowFn);
 
 	/**
 	* Start a time measurement
 	* If a time measurement is already ongoing, this method doesn't do anything (not even throwing an error)
 	*/
 	this.start = function(){
-		startTime = startTime || nowFn();
+		startTime = startTime || (nowFn());
 	};
 
 	/**

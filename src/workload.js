@@ -30,8 +30,8 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 	var workloadOptionsDefaults = {
 		fieldCount: 10,
 		fieldSize: 100,
-		docCount: 5000,
-		operationCount: 5000,
+		docCount: 1000,
+		operationCount: 1000,
 		generateId: true,
 		insertData: true,
 		useAttachments: false,
@@ -62,7 +62,7 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 
 	var totalProportions;
 	var indexModel;
-	var fieldNames, fieldNamesCount, fieldNameLength;
+	var fieldNames, fieldNamesCount, fieldNameLength, idLength;
 
 	function initWorkload(){
 		//Sizing/allocating workload arrays
@@ -81,11 +81,14 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 			throw new TypeError('Invalid proportions sum:' + totalProportions);
 		}
 
+		//Calculating how long the id values and field names should be, based on storage requirements
+		//Here we divide by 4 instead of 8, because we are generating hex strings by default, which can store only 4 bits worth of data in 1 byte
+		idLength = Math.ceil(Math.log2(workloadOptions.docCount) / 4) + 1;
+		fieldNameLength = Math.ceil(Math.log2(workloadOptions.fieldCount) / 4) + 1;
+
 		if (!(workloadOptions.fieldNames && workloadOptions.fieldNames.length > 0)){
 			fieldNames = new Array(workloadOptions.fieldCount);
 			fieldNamesCount = 0;
-
-			fieldNameLength = Math.ceil(Math.log2(workloadOptions.fieldCount)) + 1;
 
 			if (workloadOptions.generateId){
 				fieldNames[fieldNamesCount] = '_id';
@@ -208,7 +211,8 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 		var d = {};
 
 		for (var i = 0; i < workloadOptions.fieldNames.length; i++){
-			d[workloadOptions.fieldNames[i]] = generateString(workloadOptions.fieldSize);
+			if (workloadOptions.fieldNames[i] == '_id') d['_id'] = generateString(idLength);
+			else d[workloadOptions.fieldNames[i]] = generateString(workloadOptions.fieldSize);
 		}
 
 		/*if (workloadOptions.generateId){
@@ -327,7 +331,7 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 		if (generateWithoutId){
 			return {a: a};
 		} else {
-			return {i: generateString(fieldNameLength), a: a};
+			return {i: generateString(idLength), a: a};
 		}
 	}
 
@@ -350,7 +354,7 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 
 		if (inPlace){
 			o.forEach(function(item, index){
-				a[index] = item;
+				a[index] = item.v;
 			});
 			return a;
 		} else {
@@ -562,7 +566,7 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 				var randDataDocId = randData.fromSecondArray ? workloadAttachments[randDataIndex].i : randDataItem._id;
 
 				var updateParams = generateUpdateFromDoc(randDataItem, randDataDocId);
-				opParams.query = updateParams.query;
+				opParams.query = updateParams.selector;
 
 				if (updateParams.updateType == 'attachment'){
 					workloadAttachments[randDataIndex] = {a: updateParams.newAttachment, i: randDataDocId};
@@ -592,21 +596,27 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 			workloadOperations[i] = opParams;
 		}
 
+		console.log('Operations by category: ' + JSON.stringify(workloadCounters));
+
 		if (workloadOptions.shuffleOperations){
 			shuffleList(workloadOperations, true);
 		}
 
 		runOnce();
 
+		var opIndex, bChrono, cWrapper;
+
 		function runOnce(){
-			var bChrono = new Chrono();
+			bChrono = new Chrono();
 
-			var cWrapper = dbWrappers[wrapperIndex];
+			cWrapper = dbWrappers[wrapperIndex];
 
-			var opIndex = 0;
+			opIndex = 0;
 
 			function opOne(){
 				var opParams = workloadOperations[opIndex];
+
+				//console.log('Current op: ' + JSON.stringify(opParams));
 
 				if (opParams.type == 'read'){
 					cWrapper.get(opParams.docId, function(err, foundDoc){
@@ -689,7 +699,7 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 		function nextDb(){
 			wrapperIndex++;
 			if (wrapperIndex == dbWrappers.length){
-				cb(gErrors, results);
+				cb(Object.keys(gErrors).length > 0 && gErrors, results);
 			} else {
 				runOnce();
 			}

@@ -348,7 +348,6 @@
 
 					var mergedD = {};
 					for (var currentAttr in currentD){
-						if (currentAttr.indexOf('_') == 0) continue;
 						mergedD[currentAttr] = currentD[currentAttr];
 					}
 					if (currentA) mergedD['_attachments'] = prepareInlineAttachment(currentA);
@@ -365,6 +364,7 @@
 					for (var i = 0; i < res.length; i++){
 						docsIds[i] = res[i].id;
 					}
+
 					cb(undefined, docsIds);
 				});
 

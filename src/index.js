@@ -60,13 +60,14 @@ var app = {
         var w = new Workload(undefined, selectedWorkloadOptions, function(err){
             if (err){
                 console.error(JSON.stringify(err));
-                app.enabledStart();
+                app.enableStart();
                 return;
             }
 
             w.run(function(err, results){
                 if (err){
-                    console.error(JSON.stringify(results));
+                    console.error(JSON.stringify(err));
+                    console.error('Intermediate result: ' + JSON.stringify(results));
                 } else {
                     app.renderResults(selectedWorkloadOptions, results);
                 }
