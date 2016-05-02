@@ -33,7 +33,7 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 		useIndexModel: false,
 		indexModel: null, //An object (when defined)
 		queryAttributes: null, //An array (when defined)
-		shuffleWorkloads: true,
+		shuffleOperations: true,
 		pouchAdapter: 'websql',
 		proportions: {
 			read: 0, //Read by Id
@@ -61,8 +61,8 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 
 	function initWorkload(){
 		//Sizing/allocating workload arrays
-		workloadData = new Array(workloadOptions.docCount);
-		workloadAttachments = new Array(workloadOptions.useAttachments ? workloadOptions.docCount : 0);
+		workloadData = !workloadOptions.useAttachments ? new Array(workloadOptions.docCount) : undefined;
+		workloadAttachments = workloadOptions.useAttachments ? new Array(workloadOptions.docCount) : undefined;
 		workloadOperations = new Array(workloadOptions.operationCount);
 
 		//Checking proportions integrity
@@ -217,31 +217,64 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 		return d;
 	}
 
-	function generateUpdateFromDoc(d){
-		if (typeof d != 'object') throw new TypeError('d must be an object');
+	function generateUpdateFromDoc(d, currentDocId){
+		if (!(d instanceof Uint8Array || typeof d == 'object')) throw new TypeError('d must be an object or a Uint8Array');
 
-		//var dCopy = {};
-		var newAttributes = {};
-		var selector = d._id || d;
+		if (typeof d == 'object'){
+			//var dCopy = {};
+			var newAttributes = {};
+			var selector = currentDocId || d._id || d;
 
-		//Listing current documents attributes (to see which ones we would modify)
-		//Make a shallow copy using this occasion
+			//Listing current documents attributes (to see which ones we would modify)
+			//Make a shallow copy using this occasion
+			var currentAttributes = Object.keys(d);
+			for (var i = 0; i < currentAttributes.length; i++){
+				//Excluding attributes beginning with an underscore (e.g: _id, _rev, _attachments)
+				//dCopy[currentAttributes[i]] = d[currentAttributes[i]];
+				if (currentAttributes[i].indexOf('_') == 0){
+					currentAttributes.splice(i, 1);
+					i--;
+				}
+			}
+
+			//Choosing a number of attributes to modify between [1, numberOfAvailableAttributes]
+			var numToModify = 1 + Math.floor(Math.random() * (currentAttributes.length - 1));
+			currentAttributes = shuffleList(currentAttributes).slice(0, numToModify);
+
+			for (var i = 0; i < currentAttributes.length; i++){
+				newAttributes[currentAttributes[i]] = generateString(workloadOptions.fieldSize);
+			}
+
+			return {updateType: 'doc', selector: selector, newAttributes: newAttributes};
+		} else {
+			if (!currentDocId) throw new TypeError('when d is a Uint8Array, a currentDocId must be provided');
+			return {updateType: 'attachment', selector: currentDocId, newAttachment: generateAttachment(true).a};
+		}
+	}
+
+	function generateQueryFromDoc(d, currentDocId){
+		if (!(d instanceof Uint8Array || typeof d == 'object')) throw new TypeError('d must be an object of a Uint8Array');
+
+		if (d instanceof Uint8Array) return currentDocId;
+
+		var query = {};
+
 		var currentAttributes = Object.keys(d);
 		for (var i = 0; i < currentAttributes.length; i++){
-			//Excluding attributes beginning with an underscore (e.g: _id, _rev, _attachments)
-			//dCopy[currentAttributes[i]] = d[currentAttributes[i]];
-			if (currentAttributes[i].indexOf('_') == 0) currentAttributes.splice(i, 1);
+			if (currentAttributes[i].indexOf('_') == 0){
+				currentAttributes.splice(i, 1);
+				i--;
+			}
 		}
 
-		//Choosing a number of attributes to modify between [1, numberOfAvailableAttributes]
-		var numToModify = 1 + Math.floor(Math.random() * (currentAttributes.length - 1));
-		currentAttributes = shuffleList(currentAttributes).slice(0, numToModify);
+		var numToQuery = 1 + Math.floor(Math.random() * (currentAttributes.length - 1));
+		currentAttributes = shuffleList(currentAttributes).slice(0, numToQuery);
 
 		for (var i = 0; i < currentAttributes.length; i++){
-			newAttributes[currentAttributes[i]] = generateString(workloadOptions.fieldSize);
+			query[currentAttributes[i]] = d[currentAttributes[i]];
 		}
 
-		return {selector: selector, newAttributes: newAttributes};
+		return query;
 	}
 
 	function generateBlob(min, max){ //Generate a blob in the [min, max] range in kilobytes. Defaults to [100, 200]
@@ -282,6 +315,15 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 		return b;
 	}
 
+	function generateAttachment(generateWithoutId, min, max){
+		var a = generateBlob(min, max);
+		if (generateWithoutId){
+			return {a: a};
+		} else {
+			return {i: generateString(fieldNameLength), a: a};
+		}
+	}
+
 	function shuffleList(a, inPlace){
 		if (!(Array.isArray(a) && a.length > 0)) throw new TypeError('a must be a non empty array');
 
@@ -311,12 +353,27 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 		}
 	}
 
-	function randomListItem(l){
+	function randomListItem(l, returnWithIndex){
 		if (!Array.isArray(l)) throw new TypeError('l must be an array');
 		if (l.length < 2) throw new TypeError('l must contain at least 2 items');
 
 		var itemIndex = Math.floor(Math.random() * l.length);
-		return l[itemIndex] || randomListItem(l); //Repeat recursively until the selected item is not null or undefined
+		return (l[itemIndex] && (returnWithIndex ? {item: l[itemIndex], index: itemIndex} : l[itemIndex])) || randomListItem(l); //Repeat recursively until the selected item is not null or undefined
+	}
+
+	function randomListItemFrom2Arrays(a1, a2, returnWithIndex){
+		if (!(Array.isArray(a1) && Array.isArray(a2) && a1.length == a2.length && a1.length > 1)) throw new TypeError('a1 and a2 must both be arrays, with the same length, having capacity of at least 2');
+
+		var itemIndex = Math.floor(Math.random() & a1.length);
+		var selectedItem = a1[itemIndex];
+		var fromSecondArray = false;
+		if (!selectedItem){
+			selectedItem = a2[itemIndex];
+			fromSecondArray = true;
+		}
+		if (!selectedItem) return randomListItemFrom2Arrays(a1, a2, returnWithIndex);
+
+		return returnWithIndex ? {item: selectedItem, index: itemIndex, fromSecondArray: fromSecondArray} : selectedItem;
 	}
 
 	function getNextOperationType(opIndex){
@@ -413,7 +470,7 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 
 		if (workloadOptions.useAttachments){
 			for (var i = 0; i < aotInserts; i++){
-				workloadAttachments[i] = generateBlob();
+				workloadAttachments[i] = generateAttachment();
 			}
 		} else {
 			for (var i = 0; i < aotInserts; i++){
@@ -424,14 +481,14 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 		var bulkSaveIndex = 0;
 
 		function bulkSaveOne(){
-			dbWrappers[bulkSaveIndex].bulkSave(workloadData, workloadAttachments, function(err, docsIds){
+			dbWrappers[bulkSaveIndex].bulkSave(workloadData, workloadAttachments && workloadAttachments.map(function(item){return item && item.a}), function(err, docsIds){
 				if (err){
 					cb(err);
 					return;
 				}
 
 				bulkSaveNext();
-			});
+			}, workloadAttachments && workloadAttachments.map(function(item){return item && item.i}));
 		}
 
 		function bulkSaveNext(){
@@ -455,30 +512,63 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 		var wrapperIndex = 0;
 
 		//Prepare queries and what not.
+		//Generate missing docs (regarding insert proportion)
+		//Generate queries based upon existing docs, that are randomly selected from dataList
+
+		//Ensuring proportions balance : current proportions are recalculated at each iteration
+		//The type of operation to be scheduled/done in the current iteration is the type that has it's current proportion that furthest from its target proportion
 		var numOperations = workloadOperations.length;
 		for (var i = 0; i < numOperations; i++){
 			var nextOpType = getNextOperationType(i);
 
 			var opParams = {type: nextOpType};
 			if (nextOpType == 'read'){
-				var randDocId = randomListItem(workloadData)._id;
+				var randData = randomListItemFrom2Arrays(workloadData, workloadAttachments, true);
+				var randDataIndex = randData.index;
+				var randDataItem = randData.item;
 
+				//doc id retrieval, depending on whether the selected data is a doc or an attachment
+				var _id = randData.fromSecondArray ? workloadAttachments[randDataIndex].i : randDataItem._id;
+
+				opParams.docId = _id;
 			} else if (nextOpType == 'update'){
+				var randData = randomListItemFrom2Arrays(workloadData, workloadAttachments, true);
+				var randDataIndex = randData.index;
+				var randDataItem = randData.item;
 
+				var randDataDocId = randData.fromSecondArray ? workloadAttachments[randDataIndex].i : randDataItem._id;
+
+				var updateParams = generateUpdateFromDoc(randDataItem, randDataDocId);
+				opParams.query = updateParams.query;
+
+				if (updateParams.updateType == 'attachment'){
+					workloadAttachments[randDataIndex] = {a: updateParams.newAttachment, i: randDataDocId};
+					opParams.newAttachment = updateParams.newAttachment;
+				} else {
+					workloadData[randDataIndex] = updatedData;
+					opParams.newAttributes = updateParams.newAttributes;
+				}
 			} else if (nextOpType == 'insert'){
-				if (workloadOptions.useAttachments) opParams.attachment = generateBlob();
+				if (workloadOptions.useAttachments) opParams.attachment = generateAttachment();
 				else opParams.doc = generateDoc();
 			} else if (nextOpType == 'query'){
+				 var randData = randomListItemFrom2Arrays(workloadData, workloadAttachments, true);
+				 var randDataIndex = randData.index;
+				 var randDataItem = randData.item;
 
+				 var randDataDocId = randData.fromSecondArray ? workloadAttachments[randDataIndex].i : randDataItem._id;
+
+				 var query = generateQueryFromDoc(randDataItem, randDataDocId);
+
+				 opParams.query = query;
 			} else throw new Error('Invalid operation type: ' + nextOpType);
 
 			workloadOperations[i] = opParams;
 		}
-		//Generate missing docs (regarding insert proportion)
-		//Generate queries based upon existing docs, that are randomly selected from dataList
 
-		//Ensuring proportions balance : current proportions are recalculated at each iteration
-		//The type of operation to be scheduled/done in the current iteration is the type that has it's current proportion that furthest from its target proportion
+		if (workloadOptions.shuffleOperations){
+			shuffleList(workloadOperations, true);
+		}
 
 		function runOnce(){
 			var bChrono = new Chrono();
@@ -517,14 +607,14 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 						nextOp();
 					});
 				} else if (opParams.type == 'insert'){
-					cWrapper.save(opParams.doc, opParams.attachment, function(err, docId){
+					cWrapper.save(opParams.doc, opParams.attachment && opParams.attachment.a, function(err, docId){
 						if (err){
 							nextOp(err);
 							return;
 						}
 
 						nextOp();
-					});
+					}, opParams.attachment && opParams.attachment.i);
 				} else { //query
 					cWrapper.find(opParams.query, function(err, qResults){
 						if (err){
@@ -627,14 +717,20 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 		if (!initCompleted) throw new Error('The workload init procedure is not complete yet');
 		if (typeof callback != 'function') throw new TypeError('callback must be a function');
 
+		console.log('[BEGIN] generatorFunction');
 		generatorFunction(dbWrappers, function(err){
 			if (err){
 				callback(err);
 				return;
 			}
+			console.log('[END] generatorFunction');
 
+			console.log('[BEGIN] runnerFunction');
 			runnerFunction(dbWrappers, function(r_err, results){
+				console.log('[END] runnerFunction');
+				console.log('[BEGIN] cleanUp');
 				cleanUp(function(c_err){
+					console.log('[END] cleanUp');
 					callback(r_err || c_err, results);
 				});
 			});
@@ -651,6 +747,6 @@ function shallowCopy(source, target){
 	if (target && typeof target != 'object') throw new TypeError('when defined, target must be an object');
 
 	var c = target || {};
-	for (var a in o) c[a] = o[a];
+	for (var a in source) c[a] = source[a];
 	return c;
 }
