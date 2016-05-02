@@ -199,11 +199,11 @@
 								}
 
 								var translatedIds = new Array(docIds.length);
-								for (var i = 0; i < docsIds.length; i++){
+								for (var i = 0; i < docIds.length; i++){
 									//For each inserted doc/attachment (and returned id), check whether it's a doc or an attachement
 									//Add the corresponding id to the index
 									var currentProvidedDocId = (docs && docs[i] && docs[i]._id) || (attachments && attachments[i] && attachmentsIds[i]);
-									var currentLawncipherDocId = docsIds[i];
+									var currentLawncipherDocId = docIds[i];
 									if (!currentProvidedDocId){
 										throw 'Cannot find docId at index ' + i + '\nDoc: ' + JSON.stringify(docs[i]) + '\nAttachment: ' + JSON.stringify(attachments[i]);
 									}
