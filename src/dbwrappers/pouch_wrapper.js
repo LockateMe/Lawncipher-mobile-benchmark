@@ -351,7 +351,7 @@
 						if (currentAttr.indexOf('_') == 0) continue;
 						mergedD[currentAttr] = currentD[currentAttr];
 					}
-					mergedD['_attachments'] = prepareInlineAttachment(currentA);
+					if (currentA) mergedD['_attachments'] = prepareInlineAttachment(currentA);
 					docsList[i] = mergedD;
 				}
 
