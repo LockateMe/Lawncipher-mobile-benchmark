@@ -343,7 +343,7 @@
 
 				var docsList = new Array(docs.length);
 				for (var i = 0; i < docs.length; i++){
-					var currentD = docsList[i] || {_id: attachmentsIds[i], addDate: Date.now()};
+					var currentD = docs[i] || {_id: attachmentsIds[i], addDate: Date.now()};
 					var currentA = attachments[i];
 
 					var mergedD = {};
