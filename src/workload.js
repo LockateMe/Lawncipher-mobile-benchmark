@@ -596,6 +596,8 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 			shuffleList(workloadOperations, true);
 		}
 
+		runOnce();
+
 		function runOnce(){
 			var bChrono = new Chrono();
 
