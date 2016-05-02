@@ -357,6 +357,9 @@
 
 					loadedWrappers[dbName] = lcWrapper;
 
+					LawncipherDrivers.lawncipherInstances = loadedCollections;
+					LawncipherDrivers.lawncipherWrappers = loadedWrappers;
+
 					callback(undefined, lcWrapper);
 				});
 			}

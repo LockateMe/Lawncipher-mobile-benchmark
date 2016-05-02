@@ -42,6 +42,9 @@
 
 		pouchWrappers[dbName] = pouchWrapper;
 
+		LawncipherDrivers.pouchWrappers = pouchWrappers;
+		LawncipherDrivers.pouchInstances = pouchInstances;
+
 		callback(undefined, pouchWrapper);
 
 		function mapFnFactory(q){
