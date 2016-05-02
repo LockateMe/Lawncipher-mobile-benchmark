@@ -142,12 +142,13 @@
 					};*/
 
 					function saveFn(c, forceTypeTests, idToLawncipher, lawncipherToId){
-						return function(doc, attachment, cb){
+						return function(doc, attachment, cb, _attachmentId){
 							if (forceTypeTests){
 								if (!(doc || attachment)) throw new TypeError('either doc or attachment must be defined');
 								if (doc && typeof doc != 'object') throw new TypeError('when defined, doc must be an object');
 								if (attachment && !(attachment instanceof Uint8Array || typeof attachment == 'object' || typeof attachment == 'string')) throw new TypeError('when defined, attachment must either be a Uint8Array, an object or a string');
 								if (typeof cb != 'function') throw new TypeError('cb must be a function');
+								if (_attachmentId && typeof _attachmentId != 'string') throw new TypeError('when defined, _attachmentId must be a string');
 							}
 
 							c.save(attachment, doc, function(err, docId){
@@ -159,6 +160,9 @@
 								if (doc && lawncipherToId && idToLawncipher){
 									lawncipherToId[docId] = doc._id;
 									idToLawncipher[doc._id] = docId;
+								} else if (attachment && _attachmentId && lawncipherToId && idToLawncipher){
+									lawncipherToId[docId] = _attachmentId;
+									idToLawncipher[_attachmentId] = docId;
 								}
 								cb(undefined, doc._id);
 							});
@@ -177,13 +181,15 @@
 					};*/
 
 					function bulkSaveFn(c, forceTypeTests, idToLawncipher, lawncipherToId){
-						return function(docs, attachments, cb){
+						return function(docs, attachments, cb, attachmentsIds){
 							if (forceTypeTests){
 								if (!(docs || attachments)) throw new TypeError('either docs or attachments must be defined');
 								if (docs && !(Array.isArray(docs) && docs.length > 0)) throw new TypeError('when defined, docs must be a non-empty array');
 								if (attachments && !(Array.isArray(attachments) && attachments.length > 0)) throw new TypeError('when defined, attachments must be a non-empty array');
 								if (docs && attachments && !(docs.length == attachments.length)) throw new TypeError('when both docs attachments are provided, they must have the same length');
 								if (typeof cb != 'function') throw new TypeError('cb must be a function');
+								if (attachmentsIds && !(Array.isArray(attachmentsIds) && attachmentsIds.length == attachments.length)) throw new TypeError('when defined, attachmentsIds must be an array with the same length as the attachments array');
+								if (!docs && !(attachments && attachmentsIds)) throw new TypeError('when docs is not defined, both attachments and attachmentsIds must be defined');
 							}
 
 							c.bulkSave(attachments, docs, function(err, docIds){
@@ -193,14 +199,39 @@
 								}
 
 								var translatedIds = new Array(docIds.length);
+								for (var i = 0; i < docsIds.length; i++){
+									//For each inserted doc/attachment (and returned id), check whether it's a doc or an attachement
+									//Add the corresponding id to the index
+									var currentProvidedDocId = (docs && docs[i] && docs[i]._id) || (attachments && attachments[i] && attachmentsIds[i]);
+									var currentLawncipherDocId = docsIds[i];
+									if (!currentProvidedDocId){
+										throw 'Cannot find docId at index ' + i + '\nDoc: ' + JSON.stringify(docs[i]) + '\nAttachment: ' + JSON.stringify(attachments[i]);
+									}
 
-								if (docs && docs.length > 0 && idToLawncipher && lawncipherToId){
+									lawncipherToId[currentLawncipherDocId] = currentProvidedDocId;
+									idToLawncipher[currentProvidedDocId] = currentLawncipherDocId;
+									translatedIds[i] = currentProvidedDocId;
+								}
+
+								/*if (idToLawncipher && lawncipherToId){
+									if (docs && docs.length > 0){
+										docs.forEach(function(currentDoc, index){
+											lawncipherToId[docIds[index]] = currentDoc._id;
+											idToLawncipher[currentDoc._id] = docIds[index];
+											translatedIds[index] = currentDoc._id;
+										});
+									} else if (attachments.length > 0 && attachmentsIds.length > 0 && attachments.length == attachmentsIds.length){
+										attachments
+									}
+								}*/
+
+								/*if (docs && docs.length > 0 && idToLawncipher && lawncipherToId){
 									docs.forEach(function(currentDoc, index){
 										lawncipherToId[docIds[index]] = currentDoc._id;
 										idToLawncipher[currentDoc._id] = docIds[index];
 										translatedIds[index] = currentDoc._id;
 									});
-								}
+								}*/
 
 								cb(undefined, translatedIds);
 							});

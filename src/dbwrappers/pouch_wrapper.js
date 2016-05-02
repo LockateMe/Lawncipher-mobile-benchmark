@@ -274,16 +274,17 @@
 		}
 
 		function saveFn(p, forceTypeTests){
-			return function(doc, attachment, cb){
+			return function(doc, attachment, cb, _attachmentId){
 				if (forceTypeTests){
 					if (!(doc || attachment)) throw new TypeError('either doc or attachment must be defined');
 					if (doc && typeof doc != 'object') throw new TypeError('when defined, doc must be an object');
 					if (attachment && !(attachment instanceof Uint8Array || typeof attachment == 'object' || typeof attachment == 'string')) throw new TypeError('when defined, attachment must either be a Uint8Array, an object or a string');
 					if (typeof cb != 'function') throw new TypeError('cb must be a function');
+					if (_attachmentId && typeof _attachmentId != 'string') throw new TypeError('when defined, _attachmentId must be a string');
 				}
 
 				//In case attachment is defined but doc is not, generate a dummy doc to "have the attachment attached to it"
-				doc = doc || {addDate: Date.now()};
+				doc = doc || {_id: _attachmentId, addDate: Date.now()};
 
 				p.post(doc, function(err, res){
 					if (err){
@@ -326,18 +327,20 @@
 		}
 
 		function bulkSaveFn(p, forceTypeTests){
-			return function(docs, attachments, cb){
+			return function(docs, attachments, cb, attachmentsIds){
 				if (forceTypeTests){
 					if (!(docs || attachments)) throw new TypeError('either docs or attachments must be defined');
 					if (docs && !(Array.isArray(docs) && docs.length > 0)) throw new TypeError('when defined, docs must be a non-empty array');
 					if (attachments && !(Array.isArray(attachments) && attachments.length > 0)) throw new TypeError('when defined, attachments must be a non-empty array');
 					if (docs && attachments && !(docs.length == attachments.length)) throw new TypeError('when both docs attachments are provided, they must have the same length');
 					if (typeof cb != 'function') throw new TypeError('cb must be a function');
+					if (attachmentsIds && !(Array.isArray(attachmentsIds) && attachmentsIds.length == attachments.length)) throw new TypeError('when defined, attachmentsIds must be an array with the same length as the attachments array');
+					if (!docs && !(attachments && attachmentsIds)) throw new TypeError('when docs is not defined, both attachments and attachmentsIds must be defined');
 				}
 
 				var docsList = new Array(docs.length);
 				for (var i = 0; i < docs.length; i++){
-					var currentD = docsList[i];
+					var currentD = docsList[i] || {_id: attachmentsIds[i], addDate: Date.now()};
 					var currentA = attachments[i];
 
 					var mergedD = {};
