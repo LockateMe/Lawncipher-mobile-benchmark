@@ -369,7 +369,13 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 	}
 
 	function randomListItemFrom2Arrays(a1, a2, returnWithIndex){
-		if (!(Array.isArray(a1) && Array.isArray(a2) && a1.length == a2.length && a1.length > 1)) throw new TypeError('a1 and a2 must both be arrays, with the same length, having capacity of at least 2');
+		if (a1 && !(Array.isArray(a1) && a1.length > 1)) throw new TypeError('when a1 is defined, it must be an array containing at least 2 items');
+		if (a2 && !(Array.isArray(a2) && a2.length > 1)) throw new TypeError('when a2 is defined, it must be an array containing at least 2 items');
+		if (!(a1 || a2)) throw new TypeError('at least one of a1 and a2 must be defined');
+		if (a1 && a2 && a1.length != a2.length) throw new TypeError('when both a1 and a2 are defined, they must have the same length');
+
+		if (!a1) return returnWithIndex ? randomListItem(a2, returnWithIndex).map(function(item){item.fromSecondArray = true}) : randomListItem(a2);
+		if (!a2) return randomListItem(a1, returnWithIndex);
 
 		var itemIndex = Math.floor(Math.random() & a1.length);
 		var selectedItem = a1[itemIndex];
