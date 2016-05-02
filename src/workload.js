@@ -736,7 +736,7 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 		if (typeof callback != 'function') throw new TypeError('callback must be a function');
 
 		console.log('[BEGIN] generateFunction');
-		generateFunction(dbWrappers, function(err){
+		generateFunction(function(err){
 			if (err){
 				callback(err);
 				return;
@@ -744,7 +744,7 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 			console.log('[END] generateFunction');
 
 			console.log('[BEGIN] runnerFunction');
-			runnerFunction(dbWrappers, function(r_err, results){
+			runnerFunction(function(r_err, results){
 				console.log('[END] runnerFunction');
 				console.log('[BEGIN] cleanUp');
 				cleanUp(function(c_err){
