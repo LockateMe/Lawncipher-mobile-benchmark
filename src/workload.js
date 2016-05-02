@@ -568,7 +568,10 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 					workloadAttachments[randDataIndex] = {a: updateParams.newAttachment, i: randDataDocId};
 					opParams.newAttachment = updateParams.newAttachment;
 				} else {
-					workloadData[randDataIndex] = updatedData;
+					var newAttributes = updateParams.newAttributes;
+					for (var attr in newAttributes){
+						workloadData[randDataIndex][attr] = newAttributes[attr];
+					}
 					opParams.newAttributes = updateParams.newAttributes;
 				}
 			} else if (nextOpType == 'insert'){
