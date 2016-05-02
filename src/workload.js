@@ -722,13 +722,13 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 		if (!initCompleted) throw new Error('The workload init procedure is not complete yet');
 		if (typeof callback != 'function') throw new TypeError('callback must be a function');
 
-		console.log('[BEGIN] generatorFunction');
-		generatorFunction(dbWrappers, function(err){
+		console.log('[BEGIN] generateFunction');
+		generateFunction(dbWrappers, function(err){
 			if (err){
 				callback(err);
 				return;
 			}
-			console.log('[END] generatorFunction');
+			console.log('[END] generateFunction');
 
 			console.log('[BEGIN] runnerFunction');
 			runnerFunction(dbWrappers, function(r_err, results){
