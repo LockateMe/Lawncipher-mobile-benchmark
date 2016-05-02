@@ -68,7 +68,7 @@ var app = {
                 if (err){
                     console.error(JSON.stringify(results));
                 } else {
-                    app.renderResults(results);
+                    app.renderResults(selectedWorkloadOptions, results);
                 }
 
                 app.enableStart();
@@ -81,8 +81,26 @@ var app = {
     disableStart: function(){
         $('#workloadStart').attr('disabled', 'true');
     },
-    renderResults: function(results){
+    renderResults: function(workloadSettings, results){
+        var tableRow = $('<tr></tr>');
+        var workloadDetailsCell = $('<td></td>');
+        var workloadDetailsLink = $('<a href="#"></a>');
+        workloadDetailsLink.text(workloadSettings.name);
+        workloadDetailsLink.on('tap', function(){
+            alert(JSON.stringify(workloadSettings));
+        });
 
+        workloadDetailsCell.append(workloadDetailsLink);
+        var workloadLawncipherCell = $('<td></td>');
+        workloadLawncipherCell.text(results['Lawncipher'] + 'ms');
+
+        var workloadPouchCell = $('<td></td>');
+        workloadPouchCell.text(results['PouchDB'] + 'ms');
+
+        tableRow.append(workloadDetailsLink);
+        tableRow.append(workloadLawncipherCell);
+        tableRow.append(workloadPouchCell);
+        $('#workloadResultsTable').append(tableRow);
     }
 };
 

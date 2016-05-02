@@ -40,7 +40,8 @@ body {
     left: 0px;
 }
 
-#workloadSettings {
+#workloadSettings,
+#workloadResults {
     left: 0px;
     right: 0px;
     display: block;
@@ -59,4 +60,8 @@ body {
 
 #workloadSettings > label {
     height: auto;
+}
+
+#workloadResultsTable {
+    width: 100%;
 }
