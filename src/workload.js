@@ -39,7 +39,7 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 		indexModel: null, //An object (when defined)
 		queryAttributes: null, //An array (when defined)
 		shuffleOperations: true,
-		pouchAdapter: 'websql',
+		pouchAdapter: 'idb',
 		proportions: {
 			read: 0, //Read by Id
 			update: 0, //Update by id or query?
@@ -81,8 +81,7 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 			throw new TypeError('Invalid proportions sum:' + totalProportions);
 		}
 
-		if (workloadOptions.useIndexModel && !(workloadOptions.fieldNames && workloadOptions.fieldNames.length > 0)){
-			indexModel = {};
+		if (!(workloadOptions.fieldNames && workloadOptions.fieldNames.length > 0)){
 			fieldNames = new Array(workloadOptions.fieldCount);
 			fieldNamesCount = 0;
 
@@ -98,16 +97,19 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 				fieldNamesCount++;
 			}
 
-			fieldNames.forEach(function(item){
-				if (item == '_id'){
-					indexModel['_id'] = {id: true, type: 'string'};
-				} else {
-					indexModel[item] = 'string';
-				}
-			});
-
 			workloadOptions.fieldNames = fieldNames;
-			workloadOptions.indexModel = indexModel;
+
+			if (useIndexModel){
+				indexModel = {};
+				fieldNames.forEach(function(item){
+					if (item == '_id'){
+						indexModel['_id'] = {id: true, type: 'string'};
+					} else {
+						indexModel[item] = 'string';
+					}
+				});
+				workloadOptions.indexModel = indexModel;
+			}
 		}
 	}
 
@@ -473,12 +475,17 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 		var aotDocNumber = Math.min(aotDocNumberByDocCount, aotDocNumberByOpCount);
 		*/
 
+		console.log('AOT insert proportion: ' + aotInsertProportion);
+		console.log('AOT inserts: ' + aotInserts);
+
 		if (workloadOptions.useAttachments){
 			for (var i = 0; i < aotInserts; i++){
+				if (i % 100 == 0) console.log(i + ' blobs generated');
 				workloadAttachments[i] = generateAttachment();
 			}
 		} else {
 			for (var i = 0; i < aotInserts; i++){
+				if (i % 100 == 0) console.log(i + ' docs generated');
 				workloadData[i] = generateDoc();
 			}
 		}
@@ -486,11 +493,13 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 		var bulkSaveIndex = 0;
 
 		function bulkSaveOne(){
+			console.log('Bulk save on ' + dbWrappers[bulkSaveIndex].dbType);
 			dbWrappers[bulkSaveIndex].bulkSave(workloadData, workloadAttachments && workloadAttachments.map(function(item){return item && item.a}), function(err, docsIds){
 				if (err){
 					cb(err);
 					return;
 				}
+				console.log('Bulk save completed on ' + dbWrappers[bulkSaveIndex].dbType);
 
 				bulkSaveNext();
 			}, workloadAttachments && workloadAttachments.map(function(item){return item && item.i}));
@@ -499,6 +508,7 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 		function bulkSaveNext(){
 			bulkSaveIndex++;
 			if (bulkSaveIndex == dbWrappers.length){
+				console.log('AOT insertion complete');
 				cb();
 			} else {
 				bulkSaveOne();
@@ -524,6 +534,8 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 		//The type of operation to be scheduled/done in the current iteration is the type that has it's current proportion that furthest from its target proportion
 		var numOperations = workloadOperations.length;
 		for (var i = 0; i < numOperations; i++){
+			if (i % 100 == 0) console.log(i + ' operations generated');
+
 			var nextOpType = getNextOperationType(i);
 
 			var opParams = {type: nextOpType};
@@ -647,7 +659,7 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 				if (opIndex == workloadOperations.length){
 					var wDuration = bChrono.stop();
 					results[dbWrappers[wrapperIndex].dbType] = wDuration;
-
+					console.log('Workload completed on ' + dbWrappers[wrapperIndex].dbType);
 					nextDb();
 				} else {
 					/*
@@ -658,6 +670,7 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 				}
 			}
 
+			console.log('Starting workload on ' + dbWrappers[wrapperIndex].dbType);
 			bChrono.start();
 			opOne();
 		}
