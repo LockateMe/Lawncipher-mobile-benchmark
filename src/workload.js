@@ -99,7 +99,7 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 
 			workloadOptions.fieldNames = fieldNames;
 
-			if (useIndexModel){
+			if (workloadOptions.useIndexModel){
 				indexModel = {};
 				fieldNames.forEach(function(item){
 					if (item == '_id'){
