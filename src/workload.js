@@ -1,3 +1,8 @@
+//Polyfill for Math.log2. Harvested from https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/log2
+Math.log2 = Math.log2 || function(x) {
+  return Math.log(x) / Math.LN2;
+};
+
 function Workload(dbWrappers, _workloadOptions, loadCallback){
 	if (!sodium) throw new Error('libsodium cannot be found. Ensure that you are loading libsodium before loading the benchmarking code');
 
