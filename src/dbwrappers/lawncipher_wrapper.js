@@ -72,9 +72,6 @@
 
 					loadedCollections[dbName] = c;
 
-					//Build wrapper here and return it
-					var dbName = 'lawncipher';
-
 					function getFn(c, forceTypeTests, idToLawncipher){
 						return function(id, cb){
 							if (forceTypeTests){
