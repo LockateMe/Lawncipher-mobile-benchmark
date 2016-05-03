@@ -30,8 +30,8 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 	var workloadOptionsDefaults = {
 		fieldCount: 10,
 		fieldSize: 100,
-		docCount: 1000,
-		operationCount: 1000,
+		docCount: 100,
+		operationCount: 100,
 		generateId: true,
 		insertData: true,
 		useAttachments: false,
