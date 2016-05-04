@@ -26,7 +26,7 @@
 
 		var pouchOptions = {adapter: adapter};
 		if (adapter == 'websql') pouchOptions.location = 'default';
-		
+
 		var pInstance = new PouchDB(dbName, pouchOptions);
 		pouchInstances[dbName] = pInstance;
 
@@ -350,8 +350,8 @@
 					if (!docs && !(attachments && attachmentsIds)) throw new TypeError('when docs is not defined, both attachments and attachmentsIds must be defined');
 				}
 
-				var docsList = new Array(docs.length);
-				for (var i = 0; i < docs.length; i++){
+				var docsList = new Array((docs || attachments).length);
+				for (var i = 0; i < docsList.length; i++){
 					var currentD = (docs && docs[i]) || {_id: attachmentsIds[i], addDate: Date.now()};
 					var currentA = attachments && attachments[i];
 
