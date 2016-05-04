@@ -7,9 +7,7 @@
 			insert: 0,
 			query: 0
 		},
-		name: 'Mostly-Read',
-		docCount: 100,
-		operationCount: 100
+		name: 'Mostly-Read'
 	};
 
 })(window.BenchmarkWorkloads = window.BenchmarkWorkloads || {});

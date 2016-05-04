@@ -7,9 +7,7 @@
 			insert: 0,
 			query: 0
 		},
-		name: 'Read-Write',
-		docCount: 100,
-		operationCount: 100
+		name: 'Read-Write'
 	};
 
 })(window.BenchmarkWorkloads = window.BenchmarkWorkloads || {});
