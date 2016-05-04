@@ -40,3 +40,12 @@ The workloads are a mix of [YCSB](https://github.com/brianfrankcooper/YCSB)-base
 * Mostly-insert : 95% inserts and 5% reads
 * Collection size stress test : 100000+ index documents in a single collection. See how it performs with advanced/compounds search queries
 * Massive blob insertion and read: 10000+ blobs of 100kb-200kb each (ie, an Instagram picture), 250 reads. See how it performs with advanced queries with blobs of that size
+
+## Building
+
+Assuming that you have installed the prerequisites:
+
+1. Clone this repository
+2. Open the terminal and move to the cloned repo's directory
+3. Run `make android` or `make ios` to build for Android or iOS respectively
+4. To run the app on a physical device, run `make run-android` or `make run-ios`
