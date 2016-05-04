@@ -39,8 +39,6 @@ var app = {
         app.enableStart();
     },
     onStartTap: function(){
-        console.log('touch');
-
         var selectedWorkloadName = $('#workloadSelect').val();
         var selectedPouchAdapter = $('#adapterSelect').val();
         var useIndexModel = $('#useIndexModelSelect').val();
@@ -108,5 +106,10 @@ var app = {
         $('#workloadResultsTable').append(tableRow);
     }
 };
+
+var _cb = function(err, r){
+    if (err) throw err;
+    console.log(JSON.stringify(r));
+}
 
 app.initialize();
