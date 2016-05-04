@@ -432,10 +432,18 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 		if (!(a1 || a2)) throw new TypeError('at least one of a1 and a2 must be defined');
 		if (a1 && a2 && a1.length != a2.length) throw new TypeError('when both a1 and a2 are defined, they must have the same length');
 
-		if (!a1) return returnWithIndex ? randomListItem(a2, returnWithIndex).map(function(item){item.fromSecondArray = true}) : randomListItem(a2);
+		if (!a1){
+			if (returnWithIndex){
+				var s = randomListItem(a2, returnWithIndex);
+				s.fromSecondArray = true;
+				return s;
+			} else {
+				return randomListItem(a2);
+			}
+		}
 		if (!a2) return randomListItem(a1, returnWithIndex);
 
-		var itemIndex = Math.floor(Math.random() & a1.length);
+		var itemIndex = Math.floor(Math.random() * a1.length);
 		var selectedItem = a1[itemIndex];
 		var fromSecondArray = false;
 		if (!selectedItem){
