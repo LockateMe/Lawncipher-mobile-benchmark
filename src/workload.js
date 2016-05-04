@@ -13,6 +13,7 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 	dbWrappers = checkDBWrapperArray(dbWrappers, undefined, true);
 
 	//Declaring workload arrays
+	var idSet = {};
 	var workloadData, workloadOperations, workloadAttachments;
 	var workloadCounters = {
 		read: 0,
@@ -212,7 +213,14 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 		var d = {};
 
 		for (var i = 0; i < workloadOptions.fieldNames.length; i++){
-			if (workloadOptions.fieldNames[i] == '_id') d['_id'] = generateString(idLength);
+			if (workloadOptions.fieldNames[i] == '_id'){
+				var dId;
+				do {
+					dId = generateString(idLength);
+				} while (idSet[dId]);
+				idSet[dId] = true;
+				d['_id'] = dId;
+			}
 			else d[workloadOptions.fieldNames[i]] = generateString(workloadOptions.fieldSize);
 		}
 
@@ -332,7 +340,12 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 		if (generateWithoutId){
 			return {a: a};
 		} else {
-			return {i: generateString(idLength), a: a};
+			var aId;
+			do {
+				aId = generateString(idLength);
+			} while (idSet[aId]);
+			idSet[aId] = true;
+			return {i: aId, a: a};
 		}
 	}
 
@@ -370,7 +383,7 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 		if (l.length < 2) throw new TypeError('l must contain at least 2 items');
 
 		var itemIndex = Math.floor(Math.random() * l.length);
-		return (l[itemIndex] && (returnWithIndex ? {item: l[itemIndex], index: itemIndex} : l[itemIndex])) || randomListItem(l); //Repeat recursively until the selected item is not null or undefined
+		return (l[itemIndex] && (returnWithIndex ? {item: l[itemIndex], index: itemIndex} : l[itemIndex])) || randomListItem(l, returnWithIndex); //Repeat recursively until the selected item is not null or undefined
 	}
 
 	function randomListItemFrom2Arrays(a1, a2, returnWithIndex){
@@ -505,7 +518,7 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 
 		function bulkSaveOne(){
 			console.log('Bulk save on ' + dbWrappers[bulkSaveIndex].dbType);
-			dbWrappers[bulkSaveIndex].bulkSave(workloadData, workloadAttachments && workloadAttachments.map(function(item){return item && item.a}), function(err, docsIds){
+			dbWrappers[bulkSaveIndex].bulkSave(workloadData.slice(0, aotInserts), workloadAttachments && workloadAttachments.slice(0, aotInserts).map(function(item){return item && item.a}), function(err, docsIds){
 				if (err){
 					cb(err);
 					return;
@@ -513,7 +526,7 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 				console.log('Bulk save completed on ' + dbWrappers[bulkSaveIndex].dbType);
 
 				bulkSaveNext();
-			}, workloadAttachments && workloadAttachments.map(function(item){return item && item.i}));
+			}, workloadAttachments && workloadAttachments.slice(0, aotInserts).map(function(item){return item && item.i}));
 		}
 
 		function bulkSaveNext(){
@@ -554,6 +567,7 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 				var randData = randomListItemFrom2Arrays(workloadData, workloadAttachments, true);
 				var randDataIndex = randData.index;
 				var randDataItem = randData.item;
+				//console.log('read: ' + JSON.stringify(randData));
 
 				//doc id retrieval, depending on whether the selected data is a doc or an attachment
 				var _id = randData.fromSecondArray ? workloadAttachments[randDataIndex].i : randDataItem._id;
@@ -563,6 +577,7 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 				var randData = randomListItemFrom2Arrays(workloadData, workloadAttachments, true);
 				var randDataIndex = randData.index;
 				var randDataItem = randData.item;
+				//console.log('update: ' + JSON.stringify(randData));
 
 				var randDataDocId = randData.fromSecondArray ? workloadAttachments[randDataIndex].i : randDataItem._id;
 
@@ -586,6 +601,7 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 				 var randData = randomListItemFrom2Arrays(workloadData, workloadAttachments, true);
 				 var randDataIndex = randData.index;
 				 var randDataItem = randData.item;
+				 //console.log('query: ' + JSON.stringify(randData));
 
 				 var randDataDocId = randData.fromSecondArray ? workloadAttachments[randDataIndex].i : randDataItem._id;
 
@@ -661,7 +677,7 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 							return;
 						}
 
-						if (qRsesults.length == 0){
+						if (qResults.length == 0){
 							console.log('Cannot find doc for query : ' + JSON.stringify(opParams.query));
 						}
 
