@@ -24,7 +24,10 @@
 			return;
 		}
 
-		var pInstance = new PouchDB(dbName, {adapter: adapter});
+		var pouchOptions = {adapter: adapter};
+		if (adapter == 'websql') pouchOptions.location = 'default';
+		
+		var pInstance = new PouchDB(dbName, pouchOptions);
 		pouchInstances[dbName] = pInstance;
 
 		var pouchWrapper = new DBWrapper(
