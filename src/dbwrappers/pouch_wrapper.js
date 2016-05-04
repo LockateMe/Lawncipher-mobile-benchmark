@@ -36,7 +36,7 @@
 			bulkSaveFn(pInstance, forceTypeTests),
 			updateFn(pInstance, forceTypeTests),
 			removeFn(pInstance, forceTypeTests),
-			clearAllFn(pInstance),
+			clearAllFn(pInstance, pouchInstances, pouchWrappers),
 			pInstance
 		);
 
@@ -512,11 +512,16 @@
 			}
 		}
 
-		function clearAllFn(p){
+		function clearAllFn(p, currentPouchInstances, currentPouchWrappers){
 			return function(cb){
 				if (typeof cb != 'function') throw new TypeError('cb must be a function');
 
-				p.destroy(cb);
+				p.destroy(function(err, info){
+					delete currentPouchInstances[dbName];
+					delete currentPouchWrappers[dbName];
+
+					cb(err, info);
+				});
 			}
 		}
 	};
@@ -538,6 +543,8 @@
 
 			currentP.destroy(function(err){
 				if (err) errors.push(err);
+
+				delete pouchInstances[currentPName];
 
 				next();
 			});

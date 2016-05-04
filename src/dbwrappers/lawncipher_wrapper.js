@@ -316,6 +316,7 @@
 								}
 
 								delete loadedCollections[dbName];
+								delete loadedWrappers[dbName];
 								if (idToLawncipherTranslationIndexes[dbName]) delete idToLawncipherTranslationIndexes[dbName];
 								if (lawncipherToIdTranslationIndexes[dbName]) delete lawncipherToIdTranslationIndexes[dbName];
 
