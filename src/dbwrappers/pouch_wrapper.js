@@ -64,7 +64,7 @@
 
 			return function(d, emit){
 				for (var i = 0; i < queryParts.length; i++){
-					var dValue = doc[queryParts[i]], qValue = query[queryParts[i]];
+					var dValue = d[queryParts[i]], qValue = query[queryParts[i]];
 					if (!dValue) return;
 
 					var dType, qType;
