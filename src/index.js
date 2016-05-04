@@ -61,18 +61,26 @@ var app = {
 
         var w = new Workload(undefined, selectedWorkloadOptions, function(err){
             if (err){
-                console.error(JSON.stringify(err));
+                if (Array.isArray(err)){
+                    for (var i = 0; i < err.length; i++){
+                        console.error(err[i]);
+                    }
+                } else console.error(JSON.stringify(err));
                 app.enableStart();
                 return;
             }
 
             w.run(function(err, results){
                 if (err){
-                    console.error(JSON.stringify(err));
-                    console.error('Intermediate result: ' + JSON.stringify(results));
-                } else {
-                    app.renderResults(selectedWorkloadOptions, results);
+                    if (Array.isArray(err)){
+                        for (var i = 0; i < err.length; i++){
+                            console.error(err[i]);
+                        }
+                    } else console.error(JSON.stringify(err));
+                    //console.error('Intermediate result: ' + JSON.stringify(results));
                 }
+
+                app.renderResults(selectedWorkloadOptions, results);
 
                 app.enableStart();
             });
