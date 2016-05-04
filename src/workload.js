@@ -330,9 +330,49 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 	}
 
 	function generateBuffer(length){
-		var b = new Uint8Array(length);
-		window.crypto.getRandomValues(b);
-		return b;
+		if (length > 65536){
+			var numBuffers = Math.ceil(length / 65536);
+			var bufferSizes = [];
+			while (length > 0){
+				if (length > 65536){
+					bufferSizes.push(65536);
+					length -= 65536;
+				} else {
+					bufferSizes.push(length);
+					length = 0;
+				}
+			}
+
+			var bufferParts = new Array(numBuffers);
+			for (var i = 0; i < numBuffers; i++){
+				bufferParts[i] = generateBuffer(bufferSizes[i]);
+			}
+			return concatBuffers.apply({}, bufferParts);
+		} else {
+			var b = new Uint8Array(length);
+			window.crypto.getRandomValues(b);
+			return b;
+		}
+	}
+
+	function concatBuffers(){
+		var argsLength = arguments.length;
+		var totalSize = 0;
+		for (var i = 0; i < argsLength; i++){
+			if (!(arguments[i] instanceof Uint8Array)) throw new TypeError('arguments must buffers');
+			totalSize += arguments[i].length;
+		}
+
+		var r = new Uint8Array(totalSize);
+		var rIndex = 0;
+		for (var i = 0; i < argsLength; i++){
+			for (var j = 0; j < arguments[i].length; j++){
+				r[rIndex] = arguments[i][j];
+				rIndex++;
+			}
+		}
+
+		return r;
 	}
 
 	function generateAttachment(generateWithoutId, min, max){
