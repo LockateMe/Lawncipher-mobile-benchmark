@@ -418,7 +418,9 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 
 		var furthestFromTarget = Number.MIN_VALUE;
 		var furthestFromTargetAttr;
-		for (var p in propDistances){
+		var propDistancesList = Object.keys(propDistances);
+		for (var i = 0; i < propDistancesList.length; i++){
+			var p = propDistancesList[i];
 			//Defaults to an operation type. Just in case...
 			if (!furthestFromTargetAttr) furthestFromTargetAttr = p;
 
@@ -589,8 +591,9 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 					opParams.newAttachment = updateParams.newAttachment;
 				} else {
 					var newAttributes = updateParams.newAttributes;
-					for (var attr in newAttributes){
-						workloadData[randDataIndex][attr] = newAttributes[attr];
+					var newAttrList = Object.keys(newAttributes);
+					for (var j = 0; j < newAttrList.length; j++){
+						workloadData[randDataIndex][newAttrList[j]] = newAttributes[newAttrList[j]];
 					}
 					opParams.newAttributes = updateParams.newAttributes;
 				}
@@ -803,6 +806,7 @@ function shallowCopy(source, target){
 	if (target && typeof target != 'object') throw new TypeError('when defined, target must be an object');
 
 	var c = target || {};
-	for (var a in source) c[a] = source[a];
+	var sourceAttr = Object.keys(source);
+	for (var i = 0; i < sourceAttr.length; i++) c[sourceAttr[i]] = source[sourceAttr[i]];
 	return c;
 }
