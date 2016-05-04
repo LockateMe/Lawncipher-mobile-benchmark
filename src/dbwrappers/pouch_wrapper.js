@@ -50,11 +50,17 @@
 		function mapFnFactory(q){
 			//Shallow copy of query, ignoring lawncipher-specific query operators
 			var query = {};
-			for (var queryPartName in q){
+			var queryParts = Object.keys(q);
+			for (var i = 0; i < queryParts.length; i++){
+				if (queryParts[i].indexOf('$') == 0) continue;
+				query[queryParts[i]] = q[queryParts[i]];
+			}
+			/*for (var queryPartName in q){
 				if (queryPartName.indexOf('$') == 0) continue;
 				query[queryPartName] = q[queryPartName];
-			}
-			var queryParts = Object.keys(query);
+			}*/
+			//Re-init queryParts with cleaned-up query
+			queryParts = Object.keys(query);
 
 			return function(d, emit){
 				for (var i = 0; i < queryParts.length; i++){
@@ -347,9 +353,13 @@
 					var currentA = attachments && attachments[i];
 
 					var mergedD = {};
-					for (var currentAttr in currentD){
-						mergedD[currentAttr] = currentD[currentAttr];
+					var currentAttributesList = Object.keys(currentD);
+					for (var j = 0; j < currentAttributesList.length; j++){
+						mergedD[currentAttributesList[j]] = currentD[currentAttributesList[j]];
 					}
+					/*for (var currentAttr in currentD){
+						mergedD[currentAttr] = currentD[currentAttr];
+					}*/
 					if (currentA) mergedD['_attachments'] = prepareInlineAttachment(currentA);
 					docsList[i] = mergedD;
 				}
@@ -404,16 +414,25 @@
 
 				function processUpdates(docs){
 					if (newAttributes){
-						docs.forEach(function(currentDoc){
+						for (var i = 0; i < docs.length; i++){
+							var newAttrList = Object.keys(newAttributes);
+							for (var j = 0; j < newAttrList.length; j++){
+								docs[i][newAttrList[j]] = newAttributes[newAttrList[j]];
+							}
+						}
+						/*docs.forEach(function(currentDoc){
 							for (var attName in newAttributes){
 								currentDoc[attName] = newAttributes[attName];
 							}
-						});
+						});*/
 					} else {
 						var inlineAttachment = prepareInlineAttachment(newAttachment);
-						docs.forEach(function(currentDoc){
+						for (var i = 0; i < docs.length; i++){
+							docs[i]._attachments = inlineAttachment;
+						}
+						/*docs.forEach(function(currentDoc){
 							currentDoc._attachments = inlineAttachment;
-						});
+						});*/
 					}
 
 					p.bulkDocs(docs, function(err, res){
@@ -465,9 +484,12 @@
 				}
 
 				function processRemovals(docs){
-					docs.forEach(function(currentDoc){
+					for (var i = 0; i < docs.length; i++){
+						docs[i]._deleted = true;
+					}
+					/*docs.forEach(function(currentDoc){
 						currentDoc._deleted = true;
-					});
+					});*/
 
 					p.bulkDocs(docs, function(err, res){
 						if (err){
