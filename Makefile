@@ -26,10 +26,7 @@ plugins/cordova-plugin-scrypt:
 plugins/cordova-sqlite-storage:
 	cordova plugin add cordova-sqlite-storage
 
-plugins/com.couchbase.lite.phonegap:
-	cordova plugin add https://github.com/couchbaselabs/Couchbase-Lite-PhoneGap-Plugin.git
-
-plugins/done: plugins/cordova-plugin-file-node-like plugins/cordova-plugin-scrypt plugins/cordova-sqlite-storage plugins/com.couchbase.lite.phonegap
+plugins/done: plugins/cordova-plugin-file-node-like plugins/cordova-plugin-scrypt plugins/cordova-sqlite-storage
 	touch plugins/done
 
 update-plugins:
