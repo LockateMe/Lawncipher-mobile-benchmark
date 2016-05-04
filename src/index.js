@@ -44,6 +44,8 @@ var app = {
         var selectedWorkloadName = $('#workloadSelect').val();
         var selectedPouchAdapter = $('#adapterSelect').val();
         var useIndexModel = $('#useIndexModelSelect').val();
+        var selectedDocCount = parseInt($('#docCountSelect').val());
+        var selectedOpCount = parseInt($('#opCountSelect').val());
 
         var selectedWorkloadOptions = BenchmarkWorkloads[selectedWorkloadName];
         if (!selectedWorkloadOptions){
@@ -56,6 +58,8 @@ var app = {
         selectedWorkloadOptions = shallowCopy(selectedWorkloadOptions);
         selectedWorkloadOptions.useIndexModel = useIndexModel == 'use' ? true : false;
         selectedWorkloadOptions.pouchAdapter = selectedPouchAdapter;
+        selectedWorkloadOptions.docCount = selectedDocCount;
+        selectedWorkloadOptions.operationCount = selectedOpCount;
 
         var w = new Workload(undefined, selectedWorkloadOptions, function(err){
             if (err){
