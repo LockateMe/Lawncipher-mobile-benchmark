@@ -129,7 +129,8 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 				thirdParam = workloadOptions.indexModel;
 			}
 
-			LawncipherDrivers[currentInitFnName](workloadOptions.name, function(err, w){
+			var currentInitMethod = LawncipherDrivers[currentInitFnName];
+			currentInitMethod(workloadOptions.name, function(err, w){
 				if (err){
 					_cb(err);
 					return;
