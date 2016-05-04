@@ -560,7 +560,7 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 
 		function bulkSaveOne(){
 			console.log('Bulk save on ' + dbWrappers[bulkSaveIndex].dbType);
-			dbWrappers[bulkSaveIndex].bulkSave(workloadData.slice(0, aotInserts), workloadAttachments && workloadAttachments.slice(0, aotInserts).map(function(item){return item && item.a}), function(err, docsIds){
+			dbWrappers[bulkSaveIndex].bulkSave(workloadData && workloadData.slice(0, aotInserts), workloadAttachments && workloadAttachments.slice(0, aotInserts).map(function(item){return item && item.a}), function(err, docsIds){
 				if (err){
 					cb(err);
 					return;
