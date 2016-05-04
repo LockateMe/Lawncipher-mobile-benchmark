@@ -2,10 +2,10 @@
 
 	BenchmarkWorkloads.mixed = {
 		proportions: {
-			read: .65,
+			read: .55,
 			insert: .1,
 			update: .25,
-			query: 0
+			query: .1
 		},
 		name: 'Mixed'
 	};
