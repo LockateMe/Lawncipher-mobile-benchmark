@@ -39,6 +39,7 @@
 				}
 
 				fs = window.plugins.nodefs(window._fs);
+				window.fs = fs;
 
 				Lawncipher.useCordovaPluginScrypt();
 
@@ -381,6 +382,7 @@
 		}
 
 		db.close();
+		db = undefined;
 		fs.rmdirr(lawncipherRoot, cb);
 	};
 
