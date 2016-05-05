@@ -162,7 +162,7 @@
 									lawncipherToId[docId] = _attachmentId;
 									idToLawncipher[_attachmentId] = docId;
 								}
-								cb(undefined, doc._id);
+								cb(undefined, (doc && doc._id) || _attachmentId);
 							});
 						}
 					}
