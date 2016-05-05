@@ -119,12 +119,13 @@
 				var resultSet = dbResponse.rows;
 				var attachmentsFirstRs = new Array(resultSet.length);
 
+				var errorsList = [];
 				var firedCbs = 0;
 
 				function endOne(){
 					firedCbs++;
 					if (firedCbs == resultSet.length){
-						_cb(undefined, attachmentsFirstRs);
+						_cb(errorsList.length > 0 ? errorsList : undefined, attachmentsFirstRs);
 					}
 				}
 
@@ -137,8 +138,7 @@
 						//if (content_type.indexOf('json') != -1) attachmentsFirstRs.push(JSON.parse(theattachment.data));
 						processResponseBlob(theattachment, i, attachmentsFirstRs, function(_pErr){
 							if (_pErr){
-								_cb(_pErr);
-								return;
+								errorsList.push(_pErr);
 							}
 
 							endOne();
@@ -237,10 +237,10 @@
 						return;
 					}
 
-					if (doc._attachments){
+					/*if (doc._attachments){
 						console.log('attachments of doc ' + id);
 						console.log(JSON.stringify(doc._attachments));
-					}
+					}*/
 
 					cb(undefined, doc);
 				});
