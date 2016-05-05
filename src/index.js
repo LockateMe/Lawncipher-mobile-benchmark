@@ -19,7 +19,7 @@
 var app = {
     // Application Constructor
     initialize: function() {
-        window.forceTypeTests = true;
+        window.forceTypeTests = false;
 
         this.bindEvents();
     },
