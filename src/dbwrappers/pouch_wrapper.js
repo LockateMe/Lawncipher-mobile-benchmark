@@ -298,7 +298,7 @@
 				//In case attachment is defined but doc is not, generate a dummy doc to "have the attachment attached to it"
 				doc = doc || {_id: _attachmentId, addDate: Date.now()};
 
-				p.post(doc, function(err, res){
+				p.put(doc, function(err, res){
 					if (err){
 						cb(err);
 						return;
@@ -309,21 +309,22 @@
 					}
 
 					if (attachment){
+						//console.log('Saving attachment');
 						var aType;
 						if (attachment instanceof Uint8Array) aType = 'application/octet-stream';
 						else if (typeof attachment == 'object') aType = 'application/json';
 						else aType = 'text/plain';
 
 						var aBlob = new Blob([attachment]);
-						p.putAttachment(res.id, 'a', res.rev, aType, function(err, aRes){
+						p.putAttachment(res.id, 'a', res.rev, aBlob, aType, function(err, aRes){
 							if (err){
 								cb(err);
 								return;
 							}
 
 							//Curiosity... We are returning the docId anyway because it's enough to get the attachment again
-							console.log('docId: ' + res.id);
-							console.log('docId on attachment: ' + aRes.id);
+							//console.log('docId: ' + res.id);
+							//console.log('docId on attachment: ' + aRes.id);
 
 							if (!aRes.ok){
 								console.error('Received response on db.putAttachment: ' + JSON.stringify(aRes));
@@ -400,19 +401,26 @@
 				if (typeof query == 'object'){
 					p.query(mapFnFactory(query), queryOptions, processResponseFactory(function(err, docs){
 						if (err){
-							cb(err)
-						} else {
-							processUpdates(docs);
-						}
-					}, indexOnly));
-				} else {
-					p.query(mapIdFnFactory(query), queryOptions, processResponseFactory(function(err, docs){
-						if (err){
 							cb(err);
 						} else {
 							processUpdates(docs);
 						}
 					}, indexOnly));
+				} else {
+					p.get(query, {attachments: true}, function(err, doc){
+						if (err){
+							cb(err);
+						} else {
+							processUpdates([doc]);
+						}
+					});
+					/*p.query(mapIdFnFactory(query), queryOptions, processResponseFactory(function(err, docs){
+						if (err){
+							cb(err);
+						} else {
+							processUpdates(docs);
+						}
+					}, indexOnly));*/
 				}
 
 				function processUpdates(docs){
@@ -429,6 +437,7 @@
 							}
 						});*/
 					} else {
+						//console.log('Attachment update');
 						var inlineAttachment = prepareInlineAttachment(newAttachment);
 						for (var i = 0; i < docs.length; i++){
 							docs[i]._attachments = inlineAttachment;

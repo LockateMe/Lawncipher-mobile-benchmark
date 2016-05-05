@@ -694,7 +694,7 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 			function opOne(){
 				var opParams = workloadOperations[opIndex];
 
-				//console.log('Current op: ' + JSON.stringify(opParams));
+				console.log('Current op: ' + opParams.type);
 
 				if (opParams.type == 'read'){
 					cWrapper.get(opParams.docId, function(err, foundDoc){
