@@ -187,7 +187,7 @@
 					var bValue = new Uint8Array(evt.target.result);
 
 					//_cb(undefined, bValue);
-					rs[bIndex] = tValue;
+					rs[bIndex] = bValue;
 					_cb();
 				}
 			};
