@@ -24,6 +24,7 @@ module.exports = function(grunt){
 					'src/workloads/readwrite.js',
 					'src/workloads/mostlyread.js',
 					'src/workloads/mostlyinsert.js',
+					'src/workloads/mostlyquery.js',
 					'src/workloads/mixed.js',
 					'src/workloads/collectionSizeStress.js',
 					'src/workloads/massiveBlobInsertion.js',

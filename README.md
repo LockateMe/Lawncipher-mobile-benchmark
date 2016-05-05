@@ -34,12 +34,12 @@ I'm writing wrappers for every document store used in this app (to have a unifor
 The workloads are a mix of [YCSB](https://github.com/brianfrankcooper/YCSB)-based workloads and Lawncipher-targeted workloads:
 
 * Mostly-read : 95% reads and 5% updates
+* Mostly-insert : 95% inserts and 5% reads
 * Mostly queries : 95% compound queries and 5% updates
 * Read/write combination : 50% reads and 50% updates
-* Mixed : 65% reads, 10% inserts and 25% updates
-* Mostly-insert : 95% inserts and 5% reads
-* Collection size stress test : 100000+ index documents in a single collection. See how it performs with advanced/compounds search queries
-* Massive blob insertion and read: 10000+ blobs of 100kb-200kb each (ie, an Instagram picture), 250 reads. See how it performs with advanced queries with blobs of that size
+* Mixed : 55% reads, 10% inserts, 25% updates and 10% compound queries
+* Collection size stress test : (targeting) 100000+ index documents in a single collection. See how it performs with advanced/compounds search queries
+* Massive blob insertion and read: (targeting) 10000+ blobs of 100kb-200kb each (ie, an Instagram picture), 250 reads. See how it performs with advanced queries with blobs of that size
 
 ## Building
 
