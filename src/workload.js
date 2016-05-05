@@ -3,6 +3,15 @@ Math.log2 = Math.log2 || function(x) {
   return Math.log(x) / Math.LN2;
 };
 
+function round10(n, precision){
+	if (typeof n != 'number') throw new TypeError('n must be a number');
+	if (!(typeof precision == 'number' && Math.floor(precision) == precision && precision >= 0)) throw new TypeError('precision must be a positive integer number');
+	n *= Math.pow(10, precision);
+	n = Math.round(n);
+	n /= Math.pow(10, precision);
+	return n;
+}
+
 function Workload(dbWrappers, _workloadOptions, loadCallback){
 	if (!sodium) throw new Error('libsodium cannot be found. Ensure that you are loading libsodium before loading the benchmarking code');
 
@@ -240,7 +249,10 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 	function generateUpdateFromDoc(d, currentDocId){
 		if (!(d instanceof Uint8Array || typeof d == 'object')) throw new TypeError('d must be an object or a Uint8Array');
 
-		if (typeof d == 'object'){
+		if (d instanceof Uint8Array){
+			if (!currentDocId) throw new TypeError('when d is a Uint8Array, a currentDocId must be provided');
+			return {updateType: 'attachment', selector: currentDocId, newAttachment: generateAttachment(true).a};
+		} else {
 			//var dCopy = {};
 			var newAttributes = {};
 			var selector = currentDocId || d._id || d;
@@ -266,9 +278,6 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 			}
 
 			return {updateType: 'doc', selector: selector, newAttributes: newAttributes};
-		} else {
-			if (!currentDocId) throw new TypeError('when d is a Uint8Array, a currentDocId must be provided');
-			return {updateType: 'attachment', selector: currentDocId, newAttachment: generateAttachment(true).a};
 		}
 	}
 
@@ -630,6 +639,7 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 				//console.log('update: ' + JSON.stringify(randData));
 
 				var randDataDocId = randData.fromSecondArray ? workloadAttachments[randDataIndex].i : randDataItem._id;
+				randDataItem = randData.fromSecondArray ? randDataItem.a : randDataItem; //Attachment "values"/Uint8Array are nested in a {a, i} object
 
 				var updateParams = generateUpdateFromDoc(randDataItem, randDataDocId);
 				opParams.query = updateParams.selector;
@@ -747,7 +757,7 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 				opIndex++;
 				if (opIndex == workloadOperations.length){
 					var wDuration = bChrono.stop();
-					results[dbWrappers[wrapperIndex].dbType] = wDuration;
+					results[dbWrappers[wrapperIndex].dbType] = round10(wDuration, 3);
 					console.log('Workload completed on ' + dbWrappers[wrapperIndex].dbType);
 					nextDb();
 				} else {
