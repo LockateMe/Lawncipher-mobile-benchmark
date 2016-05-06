@@ -117,6 +117,11 @@
 				}
 
 				var resultSet = dbResponse.rows;
+				if (resultSet.length == 0){
+					_cb(undefined, []);
+					return;
+				}
+
 				var attachmentsFirstRs = new Array(resultSet.length);
 
 				var errorsList = [];
@@ -259,15 +264,16 @@
 					if (limit && !(typeof limit == 'number' && Math.floor(limit) == limit && limit > 0)) throw new TypeError('when defined, limit must be a strictly positive integer number');
 				}
 
-				var queryOptions = {include_docs: true, attachments: true};
+				var queryOptions = {attachments: true};
 
 				if (typeof q == 'object'){
 					if (limit) queryOptions.limit = limit;
 					if (typeof q['$skip'] == 'number' && Math.floor(q['$skip']) == q['$skip'] && q['$skip'] >= 0) queryOptions.skip = q['$skip'];
 
+					queryOptions.include_docs = true;
 					p.query(mapFnFactory(q), queryOptions, processResponseFactory(cb));
 				} else { //typeof q == 'string'. Fetch by Id
-					p.query(mapIdFnFactory(q), queryOptions, processResponseFactory(cb));
+					p.get(q, queryOptions, processResponseFactory(cb));
 				}
 			}
 		}
@@ -279,12 +285,13 @@
 					if (typeof cb != 'function') throw new TypeError('cb must be a function');
 				}
 
-				var queryOptions = {include_docs: true, attachments: true, limit: 1};
+				var queryOptions = {attachments: true, limit: 1};
 
 				if (typeof q == 'object'){
+					queryOptions.include_docs = true;
 					p.query(mapFnFactory(q), queryOptions, processResponseFactory(cb))
 				} else {
-					p.query(mapIdFnFactory(q), queryOptions, processResponseFactory(cb));
+					p.get(q, queryOptions, processResponseFactory(cb));
 				}
 			}
 		}
