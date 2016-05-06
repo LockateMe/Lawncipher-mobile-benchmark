@@ -12,7 +12,7 @@ function round10(n, precision){
 	return n;
 }
 
-function Workload(dbWrappers, _workloadOptions, loadCallback){
+function Workload(dbWrappers, _workloadOptions, loadCallback, _drivers){
 	if (!sodium) throw new Error('libsodium cannot be found. Ensure that you are loading libsodium before loading the benchmarking code');
 
 	var from_string = sodium.from_string, to_string = sodium.to_string;
@@ -31,7 +31,9 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 		query: 0
 	};
 
-	var drivers = ['Lawncipher', 'Pouch'];
+	if (_drivers && !(Array.isArray(_drivers) && _drivers.length > 0)) throw new TypeError('when defined, _drivers must be a non-empty array');
+	var drivers = _drivers || ['Lawncipher', 'Pouch']; //shuffleList(['Lawncipher', 'Pouch']);
+	//console.log('Testing order: ' + JSON.stringify(drivers));
 	var initCompleted = false;
 
 	if (_workloadOptions && typeof _workloadOptions != 'object') throw new TypeError('when defined, _workloadOptions must be an object');
@@ -694,7 +696,7 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 			function opOne(){
 				var opParams = workloadOperations[opIndex];
 
-				console.log('Current op: ' + opParams.type);
+				//console.log('Current op: ' + opParams.type);
 
 				if (opParams.type == 'read'){
 					cWrapper.get(opParams.docId, function(err, foundDoc){
@@ -830,9 +832,15 @@ function Workload(dbWrappers, _workloadOptions, loadCallback){
 	* END : WORKLOAD FUNCTIONS GENERATION
 	*/
 
-	this.run = function(callback){
+	this.run = function(callback, _drivers){
 		if (!initCompleted) throw new Error('The workload init procedure is not complete yet');
 		if (typeof callback != 'function') throw new TypeError('callback must be a function');
+
+		if (_drivers){
+			if (typeof _drivers == 'string') _drivers = [_drivers];
+			if (!(Array.isArray(_drivers) && _drivers.length > 0)) throw new TypeError('when defined, _drivers must be a non-empty array');
+			drivers = _drivers;
+		}
 
 		console.log('[BEGIN] generateFunction');
 		generateFunction(function(err){
