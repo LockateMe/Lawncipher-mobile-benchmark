@@ -130,7 +130,7 @@
 				}
 
 				for (var i = 0; i < resultSet.length; i++){
-					var attList = resultSet[i]._attachments && Object.keys(_attachments)
+					var attList = resultSet[i]._attachments && Object.keys(resultSet[i]._attachments);
 					if (!indexOnly && attList && attList.length > 0){
 						var theattachment = resultSet[i]._attachments[attList[0]];
 						//var aType = theattachment.content_type;
@@ -192,8 +192,12 @@
 				}
 			};
 
-			if (isTextBased) fr.readAsText();
-			else fs.readAsArrayBuffer();
+			fr.onerror = function(e){
+				_cb(e);
+			};
+
+			if (isTextBased) fr.readAsText(b);
+			else fr.readAsArrayBuffer(b);
 		}
 
 		function prepareInlineAttachment(data, name){
