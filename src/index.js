@@ -51,15 +51,24 @@ var app = {
             return;
         }
 
-        app.disableStart();
-
         selectedWorkloadOptions = shallowCopy(selectedWorkloadOptions);
         selectedWorkloadOptions.useIndexModel = useIndexModel == 'use' ? true : false;
         selectedWorkloadOptions.pouchAdapter = selectedPouchAdapter;
         selectedWorkloadOptions.docCount = selectedDocCount;
         selectedWorkloadOptions.operationCount = selectedOpCount;
 
-        var w = new Workload(undefined, selectedWorkloadOptions, function(err){
+        var drivers = [];
+        if ($('#enableLc').attr('checked')) drivers.push('Lawncipher');
+        if ($('#enablePDB').attr('checked')) drivers.push('Pouch');
+
+        if (drivers.length == 0){
+            alert('You must select at least one database on which the workload will be run.');
+            return;
+        }
+
+        app.disableStart();
+
+        var w = new Workload(undefined, selectedWorkloadOptions, function(err, _w){
             if (err){
                 if (Array.isArray(err)){
                     for (var i = 0; i < err.length; i++){
@@ -69,6 +78,8 @@ var app = {
                 app.enableStart();
                 return;
             }
+
+            if (!w) w = _w;
 
             w.run(function(err, results){
                 if (err){
@@ -84,7 +95,7 @@ var app = {
 
                 app.enableStart();
             });
-        });
+        }, drivers);
     },
     enableStart: function(){
         $('#workloadStart').removeAttr('disabled');
@@ -103,10 +114,10 @@ var app = {
 
         workloadDetailsCell.append(workloadDetailsLink);
         var workloadLawncipherCell = $('<td></td>');
-        workloadLawncipherCell.text(results['Lawncipher'] + 'ms');
+        if (results['Lawncipher']) workloadLawncipherCell.text(results['Lawncipher'] + 'ms');
 
         var workloadPouchCell = $('<td></td>');
-        workloadPouchCell.text(results['PouchDB'] + 'ms');
+        if (results['PouchDB']) workloadPouchCell.text(results['PouchDB'] + 'ms');
 
         tableRow.append(workloadDetailsLink);
         tableRow.append(workloadLawncipherCell);

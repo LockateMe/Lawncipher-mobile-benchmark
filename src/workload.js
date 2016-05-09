@@ -21,6 +21,8 @@ function Workload(dbWrappers, _workloadOptions, loadCallback, _drivers){
 
 	dbWrappers = checkDBWrapperArray(dbWrappers, undefined, true);
 
+	var self = this;
+
 	//Declaring workload arrays
 	var idSet = {};
 	var workloadData, workloadOperations, workloadAttachments;
@@ -142,13 +144,13 @@ function Workload(dbWrappers, _workloadOptions, loadCallback, _drivers){
 			}
 
 			var currentInitMethod = LawncipherDrivers[currentInitFnName];
-			currentInitMethod(workloadOptions.name, function(err, w){
+			currentInitMethod(workloadOptions.name, function(err, _wrapper){
 				if (err){
 					_cb(err);
 					return;
 				}
 
-				dbWrappers.push(w);
+				dbWrappers.push(_wrapper);
 
 				next();
 			}, thirdParam);
@@ -194,24 +196,6 @@ function Workload(dbWrappers, _workloadOptions, loadCallback, _drivers){
 		}
 
 		cleanOne();
-	}
-
-	if (dbWrappers.length == 0){
-		initWorkload();
-		initDrivers(function(err){
-			if (err){
-				loadCallback(err);
-				return;
-			}
-
-			initCompleted = true;
-			loadCallback();
-		});
-	} else {
-		initWorkload();
-
-		initCompleted = true;
-		loadCallback();
 	}
 
 	/*
@@ -504,45 +488,6 @@ function Workload(dbWrappers, _workloadOptions, loadCallback, _drivers){
 	* START : WORKLOAD FUNCTIONS GENERATION
 	*/
 
-	/*function generateFunctionFactory(workloadOptions, dataList, attachmentsList){
-		return function(dbWrappers, cb){
-			checkDBWrapperArray(dbWrappers);
-			if (typeof cb != 'function') throw new TypeError('cb must be a function');
-
-			var aotInsertProportion =  1 - workloadOptions.proportions.insert;
-			var aotDocNumber = Math.round(aotInsertProportion * workloadOptions.docCount);
-
-			for (var i = 0; i < aotDocNumber; i++){
-				dataList[i] = generateDoc();
-			}
-
-			var bulkSaveIndex = 0;
-
-			function bulkSaveOne(){
-				dbWrappers[bulkSaveIndex].bulkSave(dataList, attachmentsList, function(err, docsIds){
-					if (err){
-						cb(err);
-						return;
-					}
-
-					bulkSaveNext();
-				});
-			}
-
-			function bulkSaveNext(){
-				bulkSaveIndex++;
-				if (bulkSaveIndex == dbWrappers.length){
-					cb();
-				} else {
-					bulkSaveOne();
-				}
-			}
-
-			//Start the bulk insertion loop
-			bulkSaveOne();
-		}
-	}*/
-
 	var generateFunction = function(cb){
 		if (!cb) throw 'Missing callback';
 
@@ -786,53 +731,11 @@ function Workload(dbWrappers, _workloadOptions, loadCallback, _drivers){
 		}
 	};
 
-	/*function runnerFunctionFactory(workloadOptions, dataList, attachmentsList, operationsList){
-		return function(dbWrappers, cb){
-
-			var gErrors = {}; //Global errors object
-			var results = {}; //Global performance results object
-			var wrapperIndex = 0;
-
-			//Prepare queries and what not.
-			var numQueries = operationsList.length;
-			for (var i = 0; i < numQueries; i++){
-				var nextOpType = getNextOperationType(i);
-
-				if (nextOpType == 'read'){
-
-				} else if (nextOpType == 'update'){
-
-				} else if (nextOpType == 'insert'){
-
-				} else if (nextOpType == 'query'){
-
-				} else {
-					throw new Error('Invalid operation type: ' + nextOpType);
-				}
-			}
-			//Generate missing docs (regarding insert proportion)
-			//Generate queries based upon existing docs, that are randomly selected from dataList
-
-			//Ensuring proportions balance : current proportions are recalculated at each iteration
-			//The type of operation to be scheduled/done in the current iteration is the type that has it's current proportion that furthest from its target proportion
-
-			function runOnce(){
-				var bChrono = new Chrono();
-
-			}
-
-			function nextDb(){
-				wrapperIndex++;
-			}
-
-		}
-	}*/
-
 	/*
 	* END : WORKLOAD FUNCTIONS GENERATION
 	*/
 
-	this.run = function(callback, _drivers){
+	self.run = function(callback, _drivers){
 		if (!initCompleted) throw new Error('The workload init procedure is not complete yet');
 		if (typeof callback != 'function') throw new TypeError('callback must be a function');
 
@@ -862,9 +765,28 @@ function Workload(dbWrappers, _workloadOptions, loadCallback, _drivers){
 		});
 	};
 
-	this.name = function(){
+	self.name = function(){
 		return workloadOptions.name;
 	};
+
+	//Making the calls to initialize the workload
+	if (dbWrappers.length == 0){
+		initWorkload();
+		initDrivers(function(err){
+			if (err){
+				loadCallback(err);
+				return;
+			}
+
+			initCompleted = true;
+			loadCallback(undefined, self);
+		});
+	} else {
+		initWorkload();
+
+		initCompleted = true;
+		loadCallback(undefined, self);
+	}
 }
 
 function shallowCopy(source, target){
