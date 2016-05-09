@@ -44,6 +44,7 @@ var app = {
         var useIndexModel = $('#useIndexModelSelect').val();
         var selectedDocCount = parseInt($('#docCountSelect').val());
         var selectedOpCount = parseInt($('#opCountSelect').val());
+        var selectedRunCount = parseInt($('#runCountSelect').val());
 
         var selectedWorkloadOptions = BenchmarkWorkloads[selectedWorkloadName];
         if (!selectedWorkloadOptions){
@@ -68,34 +69,50 @@ var app = {
 
         app.disableStart();
 
-        var w = new Workload(undefined, selectedWorkloadOptions, function(err, _w){
-            if (err){
-                if (Array.isArray(err)){
-                    for (var i = 0; i < err.length; i++){
-                        console.error(err[i]);
-                    }
-                } else console.error(JSON.stringify(err));
-                app.enableStart();
-                return;
-            }
+        var runCount = 0;
 
-            if (!w) w = _w;
-
-            w.run(function(err, results){
+        function runWorkloadOnce(){
+            var w = new Workload(undefined, selectedWorkloadOptions, function(err, _w){
                 if (err){
                     if (Array.isArray(err)){
                         for (var i = 0; i < err.length; i++){
                             console.error(err[i]);
                         }
                     } else console.error(JSON.stringify(err));
-                    //console.error('Intermediate result: ' + JSON.stringify(results));
+                    app.enableStart();
+                    return;
                 }
 
-                app.renderResults(selectedWorkloadOptions, results);
+                if (!w) w = _w;
 
+                w.run(function(err, results){
+                    if (err){
+                        if (Array.isArray(err)){
+                            for (var i = 0; i < err.length; i++){
+                                console.error(err[i]);
+                            }
+                        } else console.error(JSON.stringify(err));
+                        //console.error('Intermediate result: ' + JSON.stringify(results));
+                    }
+
+                    app.renderResults(selectedWorkloadOptions, results);
+
+                    nextRun();
+                });
+            }, drivers);
+        }
+
+        function nextRun(){
+            runCount++;
+
+            if (runCount == selectedRunCount){
                 app.enableStart();
-            });
-        }, drivers);
+            } else {
+                runWorkloadOnce();
+            }
+        }
+
+        runWorkloadOnce();
     },
     enableStart: function(){
         $('#workloadStart').removeAttr('disabled');
