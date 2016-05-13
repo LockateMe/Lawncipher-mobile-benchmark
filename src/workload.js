@@ -34,7 +34,7 @@ function Workload(dbWrappers, _workloadOptions, loadCallback, _drivers){
 	};
 
 	if (_drivers && !(Array.isArray(_drivers) && _drivers.length > 0)) throw new TypeError('when defined, _drivers must be a non-empty array');
-	var drivers = _drivers || ['Lawncipher', 'Pouch']; //shuffleList(['Lawncipher', 'Pouch']);
+	var drivers = shuffleList(_drivers || ['Lawncipher', 'Pouch']); //shuffleList(['Lawncipher', 'Pouch']);
 	//console.log('Testing order: ' + JSON.stringify(drivers));
 	var initCompleted = false;
 
@@ -386,6 +386,11 @@ function Workload(dbWrappers, _workloadOptions, loadCallback, _drivers){
 
 	function shuffleList(a, inPlace){
 		if (!(Array.isArray(a) && a.length > 0)) throw new TypeError('a must be a non empty array');
+
+		if (a.length == 1){
+			if (inPlace) return a;
+			else return [a];
+		}
 
 		var o = new Array(a.length);
 
