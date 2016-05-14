@@ -30,6 +30,7 @@ var app = {
     bindEvents: function() {
         document.addEventListener('deviceready', this.onDeviceReady, false);
         $('#workloadStart').on('tap', app.onStartTap);
+        $('#workloadSelect').on('change', app.onWorkloadChange);
     },
     // deviceready Event Handler
     //
@@ -113,6 +114,33 @@ var app = {
         }
 
         runWorkloadOnce();
+    },
+    onWorkloadChange: function(){
+        var selectedWorkload = BenchmarkWorkloads[$('#workloadSelect').val()];
+        if (!selectedWorkload){
+            console.error($('#workloadSelect').val() + ' cannot be found');
+            return;
+        }
+        if (selectedWorkload.docCount){
+            $('#docCountSelect').val(selectedWorkload.docCount);
+        } else {
+            $('#docCountSelect').val(100);
+        }
+        if (selectedWorkload.operationCount){
+            $('#opCountSelect').val(selectedWorkload.operationCount);
+        } else {
+            $('#opCountSelect').val(100);
+        }
+        if (selectedWorkload.fieldCount){
+            $('#fieldCountSelect').val(selectedWorkload.fieldCount);
+        } else {
+            $('#fieldCountSelect').val(10);
+        }
+        if (selectedWorkload.fieldSize){
+            $('#fieldSizeSelect').val(selectedWorkload.fieldSize);
+        } else {
+            $('#fieldSizeSelect').val(100);
+        }
     },
     enableStart: function(){
         $('#workloadStart').removeAttr('disabled');

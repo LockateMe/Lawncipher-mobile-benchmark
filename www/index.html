@@ -62,6 +62,12 @@
                     <option value="blobMass">
                         Mass blob collection
                     </option>
+                    <option value="readOnly">
+                        Read-only
+                    </option>
+                    <option value="queryOnly">
+                        Query-only
+                    </option>
                 </select>
                 <label>PouchDB adapter</label>
                 <select id="adapterSelect">
@@ -82,74 +88,16 @@
                     </option>
                 </select>
                 <label>Document count</label>
-                <select id="docCountSelect">
-                    <option value="100">
-                        100
-                    </option>
-                    <option value="150">
-                        150
-                    </option>
-                    <option value="200">
-                        200
-                    </option>
-                    <option value="250">
-                        250
-                    </option>
-                    <option value="300">
-                        300
-                    </option>
-                </select>
+                <input type="number" min="100" step="50" id="docCountSelect" value="100">
                 <label>Operation count</label>
-                <select id="opCountSelect">
-                    <option value="100">
-                        100
-                    </option>
-                    <option value="150">
-                        150
-                    </option>
-                    <option value="200">
-                        200
-                    </option>
-                    <option value="250">
-                        250
-                    </option>
-                    <option value="300">
-                        300
-                    </option>
-                </select>
+                <input type="number" min="100" step="50" id="opCountSelect" value="100">
+                <label>Number of fields</label>
+                <input type="number" min="2" max="100" step="1" id="fieldCountSelect" value="10">
+                <label>Field size</label>
+                <input type="number" min="1" max="10000" step="1" id="fieldSizeSelect" value="100">
                 <label>Number of runs</label>
-                <select id="runCountSelect">
-                    <option value="1">
-                        1
-                    </option>
-                    <option value="2">
-                        2
-                    </option>
-                    <option value="3">
-                        3
-                    </option>
-                    <option value="4">
-                        4
-                    </option>
-                    <option value="5">
-                        5
-                    </option>
-                    <option value="6">
-                        6
-                    </option>
-                    <option value="7">
-                        7
-                    </option>
-                    <option value="8">
-                        8
-                    </option>
-                    <option value="9">
-                        9
-                    </option>
-                    <option value="10">
-                        10
-                    </option>
-                </select>
+                <input type="number" min="1" max="20" step="1" id="runCountSelect" value="5">
+                <!--DB selection-->
                 <label><input id="enableLc" type="checkbox" checked/> Test against Lawncipher</label>
                 <label><input id="enablePDB" type="checkbox" checked/> Test against PouchDB</label>
                 <button id="workloadStart" disabled>Start !</button>
