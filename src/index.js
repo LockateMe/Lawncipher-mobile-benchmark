@@ -31,6 +31,7 @@ var app = {
         document.addEventListener('deviceready', this.onDeviceReady, false);
         $('#workloadStart').on('tap', app.onStartTap);
         $('#workloadSelect').on('change', app.onWorkloadChange);
+        $('input').on('tap', app.onInputTap);
     },
     // deviceready Event Handler
     //
@@ -46,6 +47,8 @@ var app = {
         var selectedDocCount = parseInt($('#docCountSelect').val());
         var selectedOpCount = parseInt($('#opCountSelect').val());
         var selectedRunCount = parseInt($('#runCountSelect').val());
+        var selectedFieldCount = parseInt($('#fieldCountSelect').val());
+        var selectedFieldSize = parseInt($('#fieldSizeSelect').val());
 
         var selectedWorkloadOptions = BenchmarkWorkloads[selectedWorkloadName];
         if (!selectedWorkloadOptions){
@@ -58,6 +61,8 @@ var app = {
         selectedWorkloadOptions.pouchAdapter = selectedPouchAdapter;
         selectedWorkloadOptions.docCount = selectedDocCount;
         selectedWorkloadOptions.operationCount = selectedOpCount;
+        selectedWorkloadOptions.fieldCount = selectedFieldCount;
+        selectedWorkloadOptions.fieldSize = selectedFieldSize;
 
         var drivers = [];
         if ($('#enableLc').attr('checked')) drivers.push('Lawncipher');
@@ -141,6 +146,9 @@ var app = {
         } else {
             $('#fieldSizeSelect').val(100);
         }
+    },
+    onInputTap: function(e){
+        this.setSelectionRange(0, this.value.length);
     },
     enableStart: function(){
         $('#workloadStart').removeAttr('disabled');
