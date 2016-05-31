@@ -307,21 +307,26 @@
 						return function(cb){
 							if (typeof cb != 'function') throw new TypeError('cb must be a function');
 
-							c.close();
+							//Waiting for the last writes
+							setTimeout(doClear, 5000);
 
-							db.dropCollection(dbName, function(err){
-								if (err){
-									cb(err);
-									return;
-								}
+							function doClear(){
+								c.close();
 
-								delete loadedCollections[dbName];
-								delete loadedWrappers[dbName];
-								if (idToLawncipherTranslationIndexes[dbName]) delete idToLawncipherTranslationIndexes[dbName];
-								if (lawncipherToIdTranslationIndexes[dbName]) delete lawncipherToIdTranslationIndexes[dbName];
+								db.dropCollection(dbName, function(err){
+									if (err){
+										cb(err);
+										return;
+									}
 
-								cb();
-							});
+									delete loadedCollections[dbName];
+									delete loadedWrappers[dbName];
+									if (idToLawncipherTranslationIndexes[dbName]) delete idToLawncipherTranslationIndexes[dbName];
+									if (lawncipherToIdTranslationIndexes[dbName]) delete lawncipherToIdTranslationIndexes[dbName];
+
+									cb();
+								});
+							}
 						}
 					}
 
@@ -382,9 +387,13 @@
 			delete lawncipherToIdTranslationIndexes[colName];
 		}
 
-		db.close();
-		db = undefined;
-		fs.rmdirr(lawncipherRoot, cb);
+		function deleteFromFs(){
+			db.close();
+			db = undefined;
+			fs.rmdirr(lawncipherRoot, cb);
+		}
+
+		setTimeout(deleteFromFs, 5000);
 	};
 
 })(window.LawncipherDrivers = window.LawncipherDrivers || {}, window);
