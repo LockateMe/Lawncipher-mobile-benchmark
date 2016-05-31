@@ -5,6 +5,7 @@ copy-bower-components: bower_components/lawncipher bower_components/libsodium.js
 	cp bower_components/lawncipher/lawncipher.js www/js/
 	cp bower_components/pouchdb/dist/pouchdb.min.js www/js/pouchdb.js
 	cp bower_components/libsodium.js/dist/browsers/combined/sodium.min.js www/js/sodium.js
+	cp bower_components/long/dist/long.min.js www/js/long.js
 	# cp bower_components/ratchet/dist/js/ratchet.min.js www/js/ratchet.js
 	# cp bower_components/ratchet/dist/css/
 
