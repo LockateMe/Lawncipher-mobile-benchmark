@@ -29,6 +29,8 @@ I'm writing wrappers for every document store used in this app (to have a unifor
 * Make
 * iOS and/or Android SDKs
 
+__NOTE:__ IndexedDB support in iOS 8 & 9 is incomplete/buggy
+
 ## Types of workloads
 
 The workloads are a mix of [YCSB](https://github.com/brianfrankcooper/YCSB)-based workloads and Lawncipher-targeted workloads:
