@@ -49,6 +49,8 @@
 
 		function initDB(){
 			if (!db){
+				Lawncipher.init('?minisodium?');
+
 				db = new Lawncipher.db(lawncipherRoot, fs);
 				db.openWithPassword('password', function(err){
 					if (err){
@@ -65,7 +67,7 @@
 			if (loadedWrappers[dbName]){
 				callback(undefined, loadedWrappers[dbName]);
 			} else {
-				db.collection(dbName, indexModel, function(err, c){
+				db.collection(dbName, function(err, c){
 					if (err){
 						callback(err);
 						return;
@@ -149,7 +151,20 @@
 								if (_attachmentId && typeof _attachmentId != 'string') throw new TypeError('when defined, _attachmentId must be a string');
 							}
 
-							c.save(attachment, doc, function(err, docId){
+							var unifiedDoc;
+
+							if (doc && attachment){
+								unifiedDoc = {
+									__index: doc,
+									__blob: attachment,
+								};
+							} else {
+								if (doc) unifiedDoc = doc;
+								else if (attachment) unifiedDoc = attachment;
+								else throw new Error('Nor doc nor attachment are defined in LawncipherWrapper.save');
+							}
+
+							c.save(unifiedDoc, function(err, docId){
 								if (err){
 									cb(err);
 									return;
@@ -190,7 +205,24 @@
 								if (!docs && !(attachments && attachmentsIds)) throw new TypeError('when docs is not defined, both attachments and attachmentsIds must be defined');
 							}
 
-							c.bulkSave(attachments, docs, function(err, docIds){
+							var unifiedDocs = new Array(docs.length);
+
+							for (var i = 0; i < unifiedDocs.length; i++){
+								var unifiedDoc;
+								if (docs && docs[i] && attachments && attachments[i]){
+									unifiedDoc = {
+										__index: docs[i],
+										__blob: attachments[i],
+									};
+								} else {
+									if (docs && docs[i]) unifiedDoc = docs[i];
+									else if (attachments && attachments[i]) unifiedDoc = attachments[i];
+									else throw new Error('Nor doc nor attachment are defined in LawncipherWrapper.bulkSave [' + i + ']');
+								}
+								unifiedDocs[i] = unifiedDoc;
+							}
+
+							c.bulkSave(unifiedDocs, function(err, docIds){
 								if (err){
 									cb(err);
 									return;
@@ -206,8 +238,8 @@
 										throw 'Cannot find docId at index ' + i + '\nDoc: ' + JSON.stringify(docs[i]) + '\nAttachment: ' + JSON.stringify(attachments[i]);
 									}
 
-									lawncipherToId[currentLawncipherDocId] = currentProvidedDocId;
-									idToLawncipher[currentProvidedDocId] = currentLawncipherDocId;
+									if (lawncipherToId) lawncipherToId[currentLawncipherDocId] = currentProvidedDocId;
+									if (idToLawncipher) idToLawncipher[currentProvidedDocId] = currentLawncipherDocId;
 									translatedIds[i] = currentProvidedDocId;
 								}
 
@@ -365,7 +397,7 @@
 					LawncipherDrivers.lawncipherWrappers = loadedWrappers;
 
 					callback(undefined, lcWrapper);
-				});
+				}, indexModel);
 			}
 		}
 
