@@ -21,13 +21,16 @@ bower_components/pouchdb:
 plugins/cordova-plugin-file-node-like:
 	cordova plugin add cordova-plugin-file-node-like
 
-plugins/cordova-plugin-scrypt:
-	cordova plugin add cordova-plugin-scrypt
+plugins/cordova-plugin-minisodium:
+	cordova plugin add cordova-plugin-minisodium
+
+#plugins/cordova-plugin-scrypt:
+#	cordova plugin add cordova-plugin-scrypt
 
 plugins/cordova-sqlite-storage:
 	cordova plugin add cordova-sqlite-storage
 
-plugins/done: plugins/cordova-plugin-file-node-like plugins/cordova-plugin-scrypt plugins/cordova-sqlite-storage
+plugins/done: plugins/cordova-plugin-file-node-like plugins/cordova-plugin-minisodium plugins/cordova-sqlite-storage
 	touch plugins/done
 
 update-plugins:
