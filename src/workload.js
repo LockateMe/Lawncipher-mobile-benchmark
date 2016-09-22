@@ -122,7 +122,7 @@ function Workload(dbWrappers, _workloadOptions, loadCallback, _drivers){
 					if (item == '_id'){
 						indexModel['_id'] = {id: true, type: 'string'};
 					} else {
-						indexModel[item] = 'string';
+						indexModel[item] = {type: 'string', index: Math.round(Math.random())};
 					}
 				});
 				workloadOptions.indexModel = indexModel;
